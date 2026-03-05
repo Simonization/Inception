@@ -1,0 +1,256 @@
+===
+This is the information about the machine where this project is built on 
+
+===
+
+
+
+Architecture:                x86_64
+  CPU op-mode(s):            32-bit, 64-bit
+  Address sizes:             39 bits physical, 48 bits virtual
+  Byte Order:                Little Endian
+CPU(s):                      4
+  On-line CPU(s) list:       0-3
+Vendor ID:                   GenuineIntel
+  Model name:                Intel(R) Core(TM) i5-7500 CPU @ 3.40GHz
+    CPU family:              6
+    Model:                   158
+    Thread(s) per core:      1
+    Core(s) per socket:      4
+    Socket(s):               1
+    Stepping:                9
+    CPU max MHz:             3800.0000
+    CPU min MHz:             800.0000
+    BogoMIPS:                6799.81
+    Flags:                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pg
+                             e mca cmov pat pse36 clflush dts acpi mmx fxsr sse 
+                             sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm cons
+                             tant_tsc art arch_perfmon pebs bts rep_good nopl xt
+                             opology nonstop_tsc cpuid aperfmperf pni pclmulqdq 
+                             dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fm
+                             a cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe po
+                             pcnt tsc_deadline_timer aes xsave avx f16c rdrand l
+                             ahf_lm abm 3dnowprefetch cpuid_fault epb invpcid_si
+                             ngle pti ssbd ibrs ibpb stibp tpr_shadow vnmi flexp
+                             riority ept vpid ept_ad fsgsbase tsc_adjust bmi1 av
+                             x2 smep bmi2 erms invpcid mpx rdseed adx smap clflu
+                             shopt intel_pt xsaveopt xsavec xgetbv1 xsaves dther
+                             m ida arat pln pts hwp hwp_notify hwp_act_window hw
+                             p_epp md_clear flush_l1d arch_capabilities ibpb_exi
+                             t_to_user
+Virtualization features:     
+  Virtualization:            VT-x
+Caches (sum of all):         
+  L1d:                       128 KiB (4 instances)
+  L1i:                       128 KiB (4 instances)
+  L2:                        1 MiB (4 instances)
+  L3:                        6 MiB (1 instance)
+NUMA:                        
+  NUMA node(s):              1
+  NUMA node0 CPU(s):         0-3
+Vulnerabilities:             
+  Gather data sampling:      Mitigation; Microcode
+  Indirect target selection: Not affected
+  Itlb multihit:             KVM: Mitigation: VMX disabled
+  L1tf:                      Mitigation; PTE Inversion; VMX conditional cache fl
+                             ushes, SMT disabled
+  Mds:                       Mitigation; Clear CPU buffers; SMT disabled
+  Meltdown:                  Mitigation; PTI
+  Mmio stale data:           Mitigation; Clear CPU buffers; SMT disabled
+  Reg file data sampling:    Not affected
+  Retbleed:                  Mitigation; IBRS
+  Spec rstack overflow:      Not affected
+  Spec store bypass:         Mitigation; Speculative Store Bypass disabled via p
+                             rctl and seccomp
+  Spectre v1:                Mitigation; usercopy/swapgs barriers and __user poi
+                             nter sanitization
+  Spectre v2:                Mitigation; IBRS; IBPB conditional; STIBP disabled;
+                              RSB filling; PBRSB-eIBRS Not affected; BHI Not aff
+                             ected
+  Srbds:                     Mitigation; Microcode
+  Tsa:                       Not affected
+  Tsx async abort:           Mitigation; TSX disabled
+  Vmscape:                   Mitigation; IBPB before exit to userspace
+
+
+
+
+
+
+free -h
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       2.9Gi       2.1Gi        52Mi       2.7Gi       4.4Gi
+Swap:          4.0Gi          0B       4.0Gi
+
+
+lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE
+NAME                                 SIZE TYPE MOUNTPOINT        FSTYPE
+loop0                               91.4M loop /snap/lxd/36918   squashfs
+loop1                               91.6M loop /snap/lxd/37982   squashfs
+loop2                               50.9M loop /snap/snapd/25577 squashfs
+loop3                               63.8M loop /snap/core20/2717 squashfs
+loop4                               63.8M loop /snap/core20/2686 squashfs
+loop5                               48.1M loop /snap/snapd/25935 squashfs
+sda                                931.5G disk                   
+├─sda1                               512M part /boot/efi         vfat
+├─sda2                                 1G part /boot             ext4
+└─sda3                               930G part                   LVM2_member
+  ├─ubuntu--vg-ubuntu--lv--root      651G lvm  /                 ext4
+  └─ubuntu--vg-ubuntu--lv--goinfre 232.5G lvm  /goinfre          ext4
+sdb                                  4.7G disk /home/slangero    xfs
+nvme0n1                             26.1G disk                   
+├─nvme0n1p1                          300M part                   vfat
+└─nvme0n1p2                         25.8G part                   apfs
+
+
+df -h
+Filesystem                                  Size  Used Avail Use% Mounted on
+tmpfs                                       784M  2.1M  782M   1% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv--root     640G   26G  582G   5% /
+tmpfs                                       3.9G  4.0K  3.9G   1% /dev/shm
+tmpfs                                       5.0M     0  5.0M   0% /run/lock
+tmpfs                                       3.9G     0  3.9G   0% /run/qemu
+/dev/sda2                                   974M  255M  652M  29% /boot
+/dev/sda1                                   511M  6.1M  505M   2% /boot/efi
+/dev/mapper/ubuntu--vg-ubuntu--lv--goinfre  228G   42G  175G  20% /goinfre
+/dev/sdb                                    4.7G  4.3G  361M  93% /home/slangero
+sgoinfre.s19.be:/mnt/sgoinfre              1006G  194G  772G  21% /sgoinfre
+tmpfs                                       784M  116K  784M   1% /run/user/145859
+
+
+  ~ cat /etc/os-release
+PRETTY_NAME="Ubuntu 22.04.4 LTS"
+NAME="Ubuntu"
+VERSION_ID="22.04"
+VERSION="22.04.4 LTS (Jammy Jellyfish)"
+VERSION_CODENAME=jammy
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=jammy
+
+
+uname -a   
+Linux shi-r4-p6.s19.be 5.15.0-171-generic #181-Ubuntu SMP Fri Feb 6 22:44:50 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+hostnamectl
+ Static hostname: shi-r4-p6.s19.be
+       Icon name: computer-laptop
+         Chassis: laptop
+      Machine ID: aa1e39014d5a4877bd5b63b5694312d7
+         Boot ID: 382df1f0c21a4120924599ba2ec9ee8b
+Operating System: Ubuntu 22.04.4 LTS              
+          Kernel: Linux 5.15.0-171-generic
+    Architecture: x86-64
+ Hardware Vendor: Apple Inc.
+  Hardware Model: iMac18,3
+
+
+grep -E "vmx|svm" /proc/cpuinfo | head -1
+flags        : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb invpcid_single pti ssbd ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp md_clear flush_l1d arch_capabilities ibpb_exit_to_user
+
+
+ ls /dev/kvm && echo "KVM available" || echo "KVM NOT available"
+/dev/kvm
+KVM available
+
+
+systemd-detect-virt
+none
+
+
+ip addr show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: enp4s0f0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 78:7b:8a:c1:8c:fe brd ff:ff:ff:ff:ff:ff
+    inet 10.1.4.6/16 metric 100 brd 10.1.255.255 scope global enp4s0f0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::7a7b:8aff:fec1:8cfe/64 scope link 
+       valid_lft forever preferred_lft forever
+3: wlp3s0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether a8:be:27:d2:2c:9c brd ff:ff:ff:ff:ff:ff
+4: virbr0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default qlen 1000
+    link/ether 52:54:00:10:c3:f0 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.122.1/24 brd 192.168.122.255 scope global virbr0
+       valid_lft forever preferred_lft forever
+5: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default 
+    link/ether 02:42:4c:71:1c:f6 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+
+ip route
+default via 10.1.254.254 dev enp4s0f0 proto dhcp src 10.1.4.6 metric 100 
+10.1.0.0/16 dev enp4s0f0 proto kernel scope link src 10.1.4.6 metric 100 
+10.1.254.254 dev enp4s0f0 proto dhcp scope link src 10.1.4.6 metric 100 
+10.51.1.253 via 10.1.254.254 dev enp4s0f0 proto dhcp src 10.1.4.6 metric 100 
+172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 linkdown 
+192.168.122.0/24 dev virbr0 proto kernel scope link src 192.168.122.1 linkdown 
+
+
+mount | grep cgroup   
+cgroup2 on /sys/fs/cgroup type cgroup2 (rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot)
+
+
+cat /proc/filesystems | grep cgroup
+nodev    cgroup
+nodev    cgroup2
+
+
+echo "=== OS ===" && hostnamectl
+echo "=== CPU ===" && lscpu | grep -E "Model|Socket|Core|Thread|Virtualiz"
+echo "=== RAM ===" && free -h
+echo "=== DISK ===" && lsblk -o NAME,SIZE,TYPE,MOUNTPOINT
+echo "=== KVM ===" && ls /dev/kvm 2>/dev/null && echo "KVM OK" || echo "No KVM"
+echo "=== VIRT ===" && systemd-detect-virt
+=== OS ===
+ Static hostname: shi-r4-p6.s19.be
+       Icon name: computer-laptop
+         Chassis: laptop
+      Machine ID: aa1e39014d5a4877bd5b63b5694312d7
+         Boot ID: 382df1f0c21a4120924599ba2ec9ee8b
+Operating System: Ubuntu 22.04.4 LTS              
+          Kernel: Linux 5.15.0-171-generic
+    Architecture: x86-64
+ Hardware Vendor: Apple Inc.
+  Hardware Model: iMac18,3
+=== CPU ===
+Model name:                              Intel(R) Core(TM) i5-7500 CPU @ 3.40GHz
+Model:                                   158
+Thread(s) per core:                      1
+Core(s) per socket:                      4
+Socket(s):                               1
+Virtualization:                          VT-x
+=== RAM ===
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       2.9Gi       2.1Gi        49Mi       2.7Gi       4.4Gi
+Swap:          4.0Gi          0B       4.0Gi
+=== DISK ===
+NAME                                 SIZE TYPE MOUNTPOINT
+loop0                               91.4M loop /snap/lxd/36918
+loop1                               91.6M loop /snap/lxd/37982
+loop2                               50.9M loop /snap/snapd/25577
+loop3                               63.8M loop /snap/core20/2717
+loop4                               63.8M loop /snap/core20/2686
+loop5                               48.1M loop /snap/snapd/25935
+sda                                931.5G disk 
+├─sda1                               512M part /boot/efi
+├─sda2                                 1G part /boot
+└─sda3                               930G part 
+  ├─ubuntu--vg-ubuntu--lv--root      651G lvm  /
+  └─ubuntu--vg-ubuntu--lv--goinfre 232.5G lvm  /goinfre
+sdb                                  4.7G disk /home/slangero
+nvme0n1                             26.1G disk 
+├─nvme0n1p1                          300M part 
+└─nvme0n1p2                         25.8G part 
+=== KVM ===
+/dev/kvm
+KVM OK
+=== VIRT ===
+none
