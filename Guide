@@ -1,0 +1,1560 @@
+# Docker: simplified ?
+
+# **Docker: qu’est ce que c’est ?**
+
+Docker c’est une plateforme logicielle qui permet de créer, déployer et exécuter des applications dans des containers. Un container c’est une unité légère et portable qui regroupe une application et toutes ses dépendances. Cette unité fonctionne de manière isolée et n'a pas besoin du système hôte pour exécuter l'application.
+
+Ça garantit qu’elle fonctionne toujours de la même manière, quel que soit l’environnement dans lequel elle est exécutée.
+
+- Un container Docker est comme une mini *virtual machine* (VM), plus rapide, léger et efficace
+- Docker automatise le déploiement d’applications dans des containers logiciels
+- Docker fonctionne sous Windows, Linux et Mac
+
+# Pourquoi est-ce qu’on utilise Docker ?
+
+Le grand avantage de Docker, c’est la possibilité de modéliser chaque container sous la forme d’une image que l’on peut stocker localement. Pour faire simple, ça nous offre une reproductibilité du code aisée. Si ça marche chez moi, ça marche partout. Ensuite, chaque application tourne dans son propre container. Ça permet d’éviter les conflits de dépendances, d’améliorer la sécurité (tout le système hôte n’est pas affecté), de faciliter la scalabilité, de simplifier les déploiements et encore quelques autres avantages assez cool.
+
+Docker va donc régler pas mal de problèmes que l’on rencontre au quotidien:
+
+- Une dépendance incompatible avec notre version de logiciel
+- Une dépendance possédée dans une version différente
+- Une dépendance qui n’existe pas sur notre OS
+- Une dépendance qui crash au lancement
+
+Bref, les problèmes de dépendance sont réglés grâce a Docker et ça, c’est plutôt sympa.
+
+# Les principaux composants de Docker:
+
+## Docker Engine
+
+Le cœur de Docker (et pas le cœur de rocker), c’est lui qui va exécuter et gérer les containers.
+
+## Docker Image
+
+Des modèles prêts a l’emploi pour lancer des containers (un peu comme des snapshots).
+
+## Dockerfile
+
+Un fichier texte qui décrit comment construire une image de Docker.
+
+## Docker Hub
+
+Un registre public où tu peux stocker et partager des images Docker.
+
+## Docker compose
+
+Un fichier pour tous les gouverner, permet de centraliser et configurer le lancement de plusieurs services définis par différents Dockerfiles.
+
+# Docker Engine
+
+Comme expliqué ci-dessus, Docker Engine c’est le moteur principal. C'est lui qui va faire tourner tout l’écosystème Docker. Il permet de construire les images, de créer et exécuter des containers, de gérer les volumes et les réseaux.
+
+C’est un peu le "cerveau" qui interprète les commandes Docker (`docker run`, `docker build`, etc.) et qui fait le boulot derrière.
+
+## Quelques commandes et leur utilité
+
+Clairement il y a pas mal de commandes à retenir, certaines peuvent paraître encore un peu nébuleuses mais voilà déjà un aperçu, pas si petit que ça.
+
+`docker version`
+
+Affiche les versions du client Docker et du moteur (Engine)
+
+`docker info`
+
+Montre l’état global du moteur Docker (images, containers, …)
+
+`docker ps`
+
+Liste les containers en cours d’exécution
+
+`docker ps -a`
+
+Liste tous les containers, même ceux arrêtés
+
+`docker start <nom>`
+
+Redémarre un container déjà existant
+
+`docker stop <nom>`
+
+Arrête un container actif
+
+`docker rm <nom>`
+
+Supprime un container arrêté
+
+`docker logs <nom>`
+
+Affiche les logs générés par un container
+
+`docker run [options] image`
+
+Lance un container à partir d’une image avec les options souhaitées
+
+⚠️
+
+`docker system prune`
+
+Supprime tous les éléments inutilisés
+
+⚠️
+
+- ATTENTION: prune c’est cool, mais il faut y aller molo si tu sais pas exactement ce que tu fais
+    
+    Pourquoi ? `docker system prune` ça:
+    
+    - Supprime tous les containers arrêtés
+    - Supprime toutes les images non utilisées par un container
+    - Supprime tous les volumes anonymes inutilisés
+    - Supprime tous les réseaux non utilisés
+    
+    Prune ne demande pas de confirmation détaillée par défaut (sauf si on ajoute `--force`). Ça peut donc entraîner la perte de données persistantes, en particulier les volumes si on ajoute `--volumes`.
+    
+    Comment qu’on fait ? C’est simple. On utilise `docker system prune` uniquement :
+    
+    - Quand on est sûr de ce qu’on veut nettoyer
+    - Sur des environnements de test ou de développement
+    - Jamais en production sans filtre (on va préférer un nettoyage ciblé : `docker image prune`, `docker volume prune`, ...)
+
+# Docker Image
+
+En gros, une image Docker c’est un modèle figé de système minimal, avec une app et tout ce qu’il faut pour la faire tourner (code, dépendances, variables d’environnement, …). **Par exemple** : pour créer un container basé sur Debian, j’utilise l’image `debian:bullseye`. Au lancement du container, Docker suit les instructions de cette image pour préparer automatiquement le système Debian à l’intérieur du container.
+
+Une image est:
+
+- Immuable (tu ne peux pas la changer)
+- Légère et portable
+- *Versionnable*
+
+*Versionnable*, qu’est ce que ça veut dire ?
+
+- Tu peux lui attribuer un tag (étiquette) spécifique (exemple : `nginx:1.23`, `python:3.11-slim`, `monapp:1.0.0`). Ça permet de distinguer les différentes versions de logiciel
+- Tu peux reconstruire une image avec un nouveau tag à chaque modification. Tu gardes ainsi un historique de tes builds, un peu comme des snapshots à différents moments
+
+```bash
+docker build -t monapp:1.0.0 .
+docker build -t monapp:1.1.0 .
+```
+
+- Tu peux pousser chaque version sur un registre (ex: Docker Hub). Chaque tag correspond à une version spécifique que tu peux retrouver, réutiliser ou partager. Tu peux aussi choisir quelle version tu utilises dans un `docker run` ou un `docker-compose.yml`
+
+## Les commandes relatives à Docker Image
+
+`docker build -t mon_image .`
+
+Construit une image à partir d’un Dockerfile dans le dossier courant
+
+`docker images`
+
+Affiche la liste des images disponibles localement
+
+`docker rmi <image>`
+
+Supprime une image locale
+
+`docker pull <image>`
+
+Télécharge une image depuis Docker Hub ou un autre registre
+
+`docker tag <image> <nouveau_tag>`
+
+Ajoute un tag personnalisé à une image existante
+
+`docker push <image>`
+
+Envoie une image vers un registre distant (ex : Docker Hub)
+
+`docker history <image>`
+
+Montre les couches de construction d’une image Docker
+
+`docker inspect <image>`
+
+Affiche tous les détails techniques d’une image
+
+# Docker Hub
+
+Docker Hub c’est un registre public dans lequel on va pouvoir retrouver une multitude d’images Docker rien que pour nos beaux yeux. En gros, c’est un genre de magasin qui contient les containers de milliers de personnes, et ça régale.
+
+Tu veux créer un site WordPress avec une base de données ?
+Il te faut MariaDB pour gérer les données, et WordPress pour afficher ton contenu.
+Hasard de dingue, tu peux retrouver les deux images officielles sur Docker Hub !
+
+Pour te donner une idée, une image de MariaDB  pourrait avoir cette gueule-là.
+
+```docker
+FROM alpine:3.12
+
+RUN apk update && apk add --no-cache \
+    mariadb mariadb-client mariadb-openrc \
+    bash openrc curl
+
+COPY scripts/setup_mariadb.sh /setup_mariadb.sh
+
+RUN chmod +x /setup_mariadb.sh
+
+EXPOSE 3306
+
+ENTRYPOINT ["sh", "/setup_mariadb.sh"]
+```
+
+Là où les choses sont bien faites, c’est que ce fichier c’est un Dockerfile. Ce qui fait une transition magnifique vers notre deuxième partie.
+
+# Dockerfile
+
+C’est le nom du fichier principal d’une image Docker. Effectivement l’exemple du dessus peut paraître un peu brute de décoffrage, mais c’est juste le temps qu’on comprenne le pourquoi du comment de tout le charabia, et vous verrez, c’est pas si compliqué. Gros bisous à nicelydev pour l’explication des plus claires que je leur vole sans vergogne.
+
+## FROM
+
+C’est lui qui te dit sur quoi tu vas te baser pour construire ton image. En gros, tu lui dis "prends cette image-là comme point de départ", et ensuite tu ajoutes ta tambouille perso par-dessus. Simple, propre, efficace.
+
+## RUN
+
+Ce petit mot-clé te permet de balancer une ou plusieurs commandes Linux **pendant** **la construction de l'image**, build, et uniquement à ce moment-là. C'est l’étape où tu prépares ton environnement: installation de services, création de fichiers, configuration de base, etc. Une fois l'image construite, les instructions `RUN` **ne vont plus être exécutées à nouveau**. 
+
+## ENTRYPOINT et CMD
+
+Ce sont les instructions qui prennent le relais pour définir ce que fait le container au démarrage. `ENTRYPOINT` définit la commande principale que le container exécutera sans exceptions .
+`CMD` sert soit à fournir des arguments par défaut à `ENTRYPOINT`, soit à spécifier une commande à exécuter  si `ENTRYPOINT` n’est pas défini. Dans tous les cas, `CMD` est remplaçable lors du lancement du container. 
+
+Par exemple:
+
+```docker
+ENTRYPOINT ["python3"]
+CMD ["tem.py"]
+```
+
+`docker run mon_image`  lance python3 tem.py
+
+`docker run mon_image gene.py`   lance python3 gene.py
+
+## LABEL
+
+`LABEL`, c’est comme le post-it que tu colles sur ton image Docker pour y écrire des infos importantes : qui l’a créée, à quoi elle sert, la version, ou même un petit message sympa. Ça ne change rien à ce que fait ton container, c’est juste pour s’y retrouver plus facilement et se voit lorsque l'on fait `docker inspect <image>`.
+
+## ENV
+
+`ENV`, c’est le moyen de poser des petites notes dans ton container, appelées variables d’environnement. Elles servent à configurer ton application sans toucher au code, comme un petit pense-bête que ton app peut lire pour savoir comment se comporter. Comme pour CMD, une variable d'environnement peut être override au lancement.
+
+Exemple: si dans Dockerfiles j'ai `ENV APP_PORT=8000` je peux override avec `docker run -e APP_PORT=6666 <image>`.
+
+## ADD et COPY
+
+`ADD` et `COPY` permettent de copier un dossier et/ou des fichiers qui se trouvent dans notre machine locale vers le container. La principale différence entre les deux, est que `ADD` nous permet également de copier des fichiers via une URL.
+
+### COPY
+
+`COPY`, c’est le plus simple : il prend un fichier ou un dossier de ta machine et le balance dans l’image Docker. Pas de fioritures, pas de magie. Tu dis ce que tu veux copier, et où, point.
+
+### ADD
+
+`ADD`, c’est comme `COPY`… mais avec quelques super-pouvoirs en plus. Il peut décompresser une archive `.tar` toute seule ou même télécharger un fichier depuis une URL. Utile parfois, mais un peu plus imprévisible — du coup on l’évite souvent si `COPY` suffit.
+
+### ❌ Quand éviter `ADD`
+
+Même s’il peut faire plus de choses, on évite `ADD` dans 90 % des cas, et on lui préfère `COPY`. Pourquoi ?
+
+1. Comportement implicite : `ADD` décompresse automatiquement les fichiers `.tar` — ce qui peut surprendre si tu voulais juste les copier tels quels.
+2. Trop de responsabilités : il peut aussi télécharger depuis une URL, mais ça rend ton build moins prévisible et plus dépendant d’internet.
+3. Lisibilité réduite : quelqu’un qui lit ton `Dockerfile` ne saura pas forcément que tu as déclenché un téléchargement ou une décompression, ce qui peut prêter à confusion.
+
+### ✔️ Du coup, quand utiliser `ADD` ?
+
+- Tu veux vraiment extraire une archive `.tar` dans l’image automatiquement
+- Tu as une bonne raison de télécharger un fichier distant directement dans le build (ce qui reste discutable)
+
+## WORKDIR
+
+Définit le répertoire de travail pour les instructions suivantes dans le Dockerfile (`RUN`, `COPY`, `CMD`, etc.). Toutes les commandes s’exécuteront à partir de ce chemin, sauf indication contraire. Cela permet d’éviter d’utiliser `cd` dans chaque instruction.
+
+## EXPOSE
+
+Indique qu’un certain port est utilisé par l’application à l’intérieur du container. Cette instruction ne publie pas le port sur l’hôte, elle sert principalement de documentation et peut être utilisée par d’autres outils comme Docker Compose ou Kubernetes.
+
+# Docker-Compose
+
+Docker Compose c’est un outil officiel de Docker. Pour faire simple, ça permet de définir et, configurer et lancer plusieurs containers Docker à la fois grâce à un fichier YAML (docker-compose.yml). C’est, entre autres, très utile lorsqu’une app a plusieurs services indépendants (app web + base de données + serveur de cache par exemple) qu'il faut lancer et coordonner ensemble.
+
+## Pourquoi utiliser Docker Compose ?
+
+Comme expliqué au-dessus, Docker Compose peut, entre autres, être très intéressant à utiliser lorsqu’une app a plusieurs services indépendants, mais surtout quand :
+
+- T’as besoin de gérer plusieurs containers en une seule commande.
+- Tu veux définir toute la configuration de ton environnement dans un seul fichier. Plus besoin de retenir dix commandes `docker run` avec plein d’options tordues. Tout est clair et lisible dans un `docker-compose.yml`.
+- Tu veux que les services puissent communiquer facilement entre eux sans avoir à bidouiller les réseaux Docker. Docker-compose crée automatiquement un réseau privé interne et les services peuvent communiquer entre eux  simplement en utilisant  leurs noms défini dans le fichier YAML.
+- Tu veux garder un environnement reproductible. Que ce soit sur ta machine, celle de ton pote ou dans un pipeline CI, le résultat sera le même partout.
+- Tu veux pouvoir ajouter des volumes, des ports, des variables d’environnement ou d’autres options sans alourdir tes lignes de commande avec des flags à ne plus savoir qu'en faire. Rien de plus simple, il suffit de déclarer ça correctement dans le fichier Compose.
+- Tu cherches un moyen simple pour arrêter, redémarrer ou reconstruire ton environnement complet sans avoir à gérer chaque container à la main.
+
+En bref, Docker Compose c’est super, mais comment ça marche ?
+
+## La structure d’un fichier `docker-compose.yml`
+
+Ici en-dessous tu peux retrouver un exemple de fichier pour une app WordPress + MariaDB
+
+```yaml
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpass
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wpuser
+      MARIADB_PASSWORD: wppass
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:latest
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppass
+    depends_on:
+      - db
+
+volumes:
+  db_data:
+```
+
+## Les commandes de base pour t’en sortir avec Compose
+
+`docker-compose up`
+
+Lance tous les services (build si nécessaire)
+
+`docker-compose up -d`
+
+Lance en arrière-plan
+
+`docker-compose down`
+
+Arrête les services et nettoie les réseaux et volumes optionnels
+
+`docker-compose build`
+
+Construit les images à partir des Dockerfile
+
+`docker-compose logs`
+
+Affiche les logs de tous les containers
+
+`docker-compose exec`
+
+`docker-compose up --build`
+
+Exécute une commande dans un container en cours
+
+Lance tous les services et reconstruit l'image si une modification a été faite. Sans aucun doute, mon petit plaisir coupable.
+
+## Les mots clés à retenir
+
+<aside>
+
+services
+
+</aside>
+
+Chaque service correspond à un container (ou un groupe identique)
+
+<aside>
+
+image
+
+</aside>
+
+Image Docker utilisée pour le service
+
+<aside>
+
+build
+
+</aside>
+
+Chemin vers un Dockerfile pour construire l’image localement (remplace souvent *image*)
+
+<aside>
+
+environment
+
+</aside>
+
+Variables d’environnement injectées dans le container
+
+<aside>
+
+ports
+
+</aside>
+
+Mappage entre le port de l’hôte et celui du container
+
+<aside>
+
+volumes
+
+</aside>
+
+Montages de fichiers persistants ou partagés. Permet de sauvegarder les données et de les retrouver même après avoir stoppé notre container 
+
+<aside>
+
+depends_on
+
+</aside>
+
+Indique un ordre de démarrage (ça ne garantit pas que les services soient prêts)
+
+<aside>
+
+networks
+
+</aside>
+
+Définit des réseaux personnalisés (si pas précisé, un réseau par défaut est créé)
+
+## Les bonnes pratiques
+
+Au final, chacun fait à sa sauce. Cela dit, certaines manières de faire son recommandées si t’as envie d’avoir un truc lisible et efficace.
+
+- Utiliser un fichier `.env` pour stocker les variables sensibles ou spécifiques à un environnement que l'on ne veut pas voir en clair (ex.: mots de passe, clés API)
+- Toujours fixer les versions d’image (`wordpress:6.5`, pas `latest`) pour éviter les surprises
+- Ajouter un service `phpmyadmin` ou `adminer` pour tester la base de données en local facilement si besoin
+- Utiliser `volumes` pour conserver les données entre deux exécutions
+
+## Concrètement, quand est-ce qu’on utilise tout ça ?
+
+Eh ben plutôt souvent en fait. Par exemple si tu veux:
+
+- Développer localement une **application web** complète avec plusieurs services
+- Tester un environnement proche de la production
+- Prototyper une **architecture multi-services**
+- Automatiser un **setup reproductible** pour toute une équipe de dev
+- Simuler une **infrastructure réseau locale** avec plusieurs services interconnectés
+
+# Un peu de concret, comment appliquer tout ça à un projet ?
+
+Inception est l’un des projets qu’on va rencontrer pendant le cursus de 42. Si t’as pas eu la chance de voir comment fonctionnait Docker avant ce petit guide succin, ça peut sembler être une montagne insurmontable. On va essayer de décomposer ça pour rendre les informations les plus digestes possibles et essayer de se donner un aperçu clair de l’utilisation concrète de Docker. 
+
+## Inception, ça dit quoi ?
+
+Inception, c’est un projet qui demande de concevoir une architecture de services conteneurisés, chacun isolé dans son propre Dockerfile, et orchestrés ensemble via `docker-compose`.
+
+L’objectif principal est de mettre en place une infrastructure web complète, fonctionnelle, sécurisée, et persistante, tout en apprenant à manipuler Docker de manière propre et modulaire.
+
+Le projet va donc être scindé en différentes parties:
+
+- Création d'images personnalisées à l’aide de Dockerfiles (pas d’images "toutes faites" comme WordPress ou MariaDB)
+- Déploiement de plusieurs services (WordPress, MariaDB, NGINX, éventuellement Redis, FTP, Adminer, ...)
+- Gestion des volumes pour garantir la persistance des données entre les redémarrages
+- Mise en réseau des containers, en créant des canaux de communications entre eux
+- Configuration des variables d’environnement pour rendre les images dynamiques et réutilisables
+- Sécurisation du site via un certificat TLS (souvent avec Let’s Encrypt)
+
+<aside>
+
+TLS signifie Transport Layer Security. C’est un protocole de sécurité qui permet de chiffrer les communications entre un client et un serveur (dans notre cas, un navigateur et notre site WordPress).
+
+C’est utile pour éviter que des données sensibles ne soient interceptées.
+
+→ c’est ça qui fait passer ton site de `http://` à `https://`
+
+</aside>
+
+- Utilisation de docker-compose pour orchestrer tout ça de manière simple et centralisée
+
+Pour faire simple, Inception c’est un peu ton premier vrai projet DevOps avec Docker. Tu vas avoir besoin de créer une mini infrastructure web comme si tu bossais pour une vraie prod: un WordPress qui tourne, une base de données séparée, du HTTPS, de la persistance, du réseau propre et encore quelques autres trucs.
+
+Tout ça devra être fait dans des containers que tu construis toi-même de A à Z. Tu vas avoir besoin d’apprendre à connecter les services entre eux, à les configurer proprement et à faire tourner le tout avec un simple `docker-compose up`.
+
+Pour avoir une vue plus claire, voici une jolie photo fournie dans le sujet pour un peu mieux comprendre les agencements et interactions des différentes parties entre elles et la structure générale des fichiers:
+
+![Capture_dcran_2022-07-19__16.24.51.png](attachment:02eb8367-98f8-44de-ab01-01236d78de9e:Capture_dcran_2022-07-19__16.24.51.png)
+
+```bash
+						$> ls -alR
+
+						total XX
+						drwxrwxr-x 3 wil wil 4096 avril 42 20:42 .
+						drwxrwxrwt 17 wil wil 4096 avril 42 20:42 ..
+						-rw-rw-r-- 1 wil wil XXXX avril 42 20:42 Makefile
+						drwxrwxr-x 3 wil wil 4096 avril 42 20:42 srcs
+
+						./srcs:
+						total XX
+						drwxrwxr-x 3 wil wil 4096 avril 42 20:42 .
+						drwxrwxr-x 3 wil wil 4096 avril 42 20:42 ..
+						-rw-rw-r-- 1 wil wil XXXX avril 42 20:42 docker-compose.yml
+						-rw-rw-r-- 1 wil wil XXXX avril 42 20:42 .env
+						drwxrwxr-x 5 wil wil 4096 avril 42 20:42 requirements
+
+						./srcs/requirements:
+						total XX
+						drwxrwxr-x 5 wil wil 4096 avril 42 20:42 .
+						drwxrwxr-x 3 wil wil 4096 avril 42 20:42 ..
+						drwxrwxr-x 4 wil wil 4096 avril 42 20:42 bonus
+						drwxrwxr-x 4 wil wil 4096 avril 42 20:42 mariadb
+						drwxrwxr-x 4 wil wil 4096 avril 42 20:42 nginx
+						drwxrwxr-x 4 wil wil 4096 avril 42 20:42 tools
+						drwxrwxr-x 4 wil wil 4096 avril 42 20:42 wordpress
+
+						./srcs/requirements/mariadb:
+						total XX
+						drwxrwxr-x 4 wil wil 4096 avril 42 20:45 .
+						drwxrwxr-x 5 wil wil 4096 avril 42 20:42 ..
+						drwxrwxr-x 2 wil wil 4096 avril 42 20:42 conf
+						-rw-rw-r-- 1 wil wil XXXX avril 42 20:42 Dockerfile
+						-rw-rw-r-- 1 wil wil XXXX avril 42 20:42 .dockerignore
+						drwxrwxr-x 2 wil wil 4096 avril 42 20:42 tools
+						[...]
+
+						./srcs/requirements/nginx:
+						total XX
+						drwxrwxr-x 4 wil wil 4096 avril 42 20:42 .
+						drwxrwxr-x 5 wil wil 4096 avril 42 20:42 ..
+						drwxrwxr-x 2 wil wil 4096 avril 42 20:42 conf
+						-rw-rw-r-- 1 wil wil XXXX avril 42 20:42 Dockerfile
+						-rw-rw-r-- 1 wil wil XXXX avril 42 20:42 .dockerignore
+						drwxrwxr-x 2 wil wil 4096 avril 42 20:42 tools
+```
+
+Comme tu peux le voir, il y a pas mal de fichiers attendus. On peut retenir ici qu’il y a un dossier principal `srcs` qui contient un peu tout. On va y retrouver le `docker-compose.yml` qu’on a expliqué un peu plus haut, le fameux `.env` et un autre dossier `requirements` dans lequel tous les containers vont se trouver (MariaDB, WordPress et NGINX).
+
+## Tout ça c’est bien beau, mais par où on commence ?
+
+Les schémas ci-dessus nous donnent plusieurs infos:
+
+- Il faut respecter la structure de fichiers précisée ci-dessus (obviously)
+- Certains fichiers qu’on n’avait pas encore croisés font leur apparition ( `conf` (il va contenir la config du container auquel il se rapporte),  `.dockerignore` (genre  `.gitignore` mais pour Docker) et  `tools` )
+
+Première étape, construire la structure de fichiers. C’est fait ? Parfait, on passe à la suite, les containers. Eh oui, on en parlait, maintenant c’est du concret. L’idée ça va être d’installer tous les containers dont on a besoin à l’aide des famosos Dockerfiles.
+
+## NGINX
+
+Le premier service qu’on va vouloir mettre en place c’est un serveur web. Comment ? On fait appel au copain NGINX. Pour commencer la mise en place, il va falloir choisir un système d’exploitation. Ici, on a le choix entre Alpine et Debian.
+
+### Alpine ou Debian ?
+
+Ici, on a un choix à faire. On va essayer de faire un choix éclairé du coup:
+
+- Alpine Linux c’est une distribution très légère et minimaliste. Elle a été conçue pour la sécurité et la rapidité. C’est idéal pour les images optimisées en taille mais plus complexe à utiliser étant donné qu’elle ne contient que le strict minimum et est moins documentée.
+- Debian Bullseye c’est une distribution plus complète et intuitive pour pas mal de développeurs. On va y retrouver plus de paquets et d’outils installés par défaut, ce qui facilite grandement l’installation de services comme, à tout hasard, NGINX
+
+Vous l’aurez sûrement compris, ici ce le but c’est pas de trop se casser la tête si des solutions plus simples nous sont présentées. Pour des raisons de stabilité et de simplicité d’utilisation, on va partir sur Debian. Effectivement c’est un peu plus lourd mais le confort qu’on va gagner à travailler sur Debian m’est pas négligeable.
+
+### La création d’un Dockerfile pour NGINX
+
+Ici, on va juste commencer par initialiser l’image de base Debian qu’on veut utiliser. C’est la fondation du container.
+
+```docker
+FROM debian:bullseye
+```
+
+Le système d’exploitation est maintenant défini pour le container. À l’heure actuelle, ce n’est qu’un OS nu.
+
+### Comment tester l’image de base ?
+
+Maintenant, on va vérifier que l’image fonctionne correctement en utilisant les lignes de commande suivantes.
+
+```bash
+$ docker build -t nginx .
+$ docker run -it nginx
+```
+
+> `-it` permet d'accéder au terminal du conteneur pour y exécuter des commandes manuellement
+> 
+
+Une fois que t’es dans le container, tape `ls` pour vérifier que le système de fichiers Debian est bien présent.
+
+### Installer NGINX via le Dockerfile
+
+```docker
+RUN apt-get update && apt-get install nginx -y
+```
+
+> `apt-get update` met à jour la liste des paquets disponibles. `-y` répond automatiquement "yes" aux confirmations
+> 
+
+### Ajouter quelques outils utiles
+
+```docker
+RUN apt-get install openssl -y
+RUN rm -rf /var/lib/apt/lists/*
+```
+
+OpenSSL va nous servir à générer notre clé et certificat (pour le `https`) et le `rm` à supprimer le cache inutile.
+
+On va aussi enlever les configurations par défaut de NGINX pour éviter les conflits:
+
+```docker
+RUN rm -f /etc/nginx/sites-enabled/default
+RUN rm -f /etc/nginx/sites-available/default
+```
+
+### Le fichier de config personnalisé
+
+Ici il va falloir remplacer la configuration NGINX par la tienne. Du coup on va faire le fichier de config. Pour ce faire, on prépare un dossier `conf/` dans lequel on va créer un fichier `nginx.conf`:
+
+```
+# Bloc global "events" — gère la manière dont NGINX traite les connexions
+events {
+    # Nombre maximal de connexions simultanées par processus de travail
+    worker_connections 1024;
+}
+
+# Bloc principal HTTP — configure le comportement général du serveur web
+http {
+    # Inclut les types MIME pour que les fichiers aient les bons types (ex : .jpg = image/jpeg)
+    include /etc/nginx/mime.types;
+    
+    # Type par défaut si le type MIME n'est pas trouvé
+    default_type application/octet-stream;
+
+    # Bloc "server" — configure un hôte virtuel (notre site WordPress ici)
+    server {
+        # Écoute les connexions HTTPS sur le port 443, avec support HTTP/2
+        listen 443 ssl http2;
+        
+        # Nom de domaine du serveur (doit correspondre au certificat SSL et à l'entrée DNS)
+        server_name <login>.42.fr www.<login>.42.fr;
+        
+        # Chemin vers le certificat SSL auto-signé
+        ssl_certificate /etc/nginx/ssl/nginx.crt;
+        ssl_certificate_key /etc/nginx/ssl/nginx.key;
+        
+        # Protocoles SSL/TLS autorisés (on force TLS 1.2 et 1.3 pour la sécurité)
+        ssl_protocols TLSv1.2 TLSv1.3;
+        
+        # Répertoire racine contenant les fichiers de WordPress
+        root /var/www/html;
+        
+        # Fichiers à servir en priorité lorsqu’on accède à un répertoire
+        index index.php index.html index.htm;
+
+        # Bloc par défaut pour toutes les requêtes
+        location / {
+            # NGINX essaie de trouver un fichier ou un dossier correspondant
+            # Sinon, il redirige vers index.php (WordPress)
+            try_files $uri $uri/ /index.php?$args;
+        }
+
+        # Bloc de traitement des fichiers PHP
+        location ~ \.php$ {
+            # Découpe les chemins pour mieux gérer les paramètres (ex: fichier.php/param)
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+
+            # Redirige les requêtes PHP vers le container WordPress (port 9000)
+            fastcgi_pass wordpress:9000;
+
+            # Fichier PHP par défaut à exécuter
+            fastcgi_index index.php;
+
+            # Inclut les paramètres FastCGI standards (ex: headers, environnements)
+            include fastcgi_params;
+
+            # Spécifie le fichier PHP à exécuter
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+
+            # Paramètre complémentaire pour les chemins dynamiques
+            fastcgi_param PATH_INFO $fastcgi_path_info;
+        }
+
+        # Bloc de sécurité — empêche l’accès aux fichiers .htaccess (inutile avec NGINX, mais prudent)
+        location ~ /\.ht {
+            deny all;
+        }
+    }
+}
+```
+
+Ça va configurer NGINX pour servir des pages web sécurisées avec support PHP. Maintenant on rajoute ça dans le Dockerfile:
+
+```docker
+COPY conf/nginx.conf /etc/nginx/nginx.conf
+```
+
+### Le petit script qui régale
+
+On va faire un joli script qui va :
+
+- Vérifier si un certificat SSL auto-signé existe
+- Le créer si besoin à l’aide d’`openssl`
+- Lancer le serveur NGINX en mode foreground (nécessaire pour Docker)
+
+Par convention, on va nommer le fichier `setup_ssl.sh` et on va le placer dans un dossier `tools/` de notre service NGINX dans l’arborescence Docker. On fera de même pour les scripts des autres services, comme ça on est sûrs d’y voir plus clair.
+
+Ça va ressembler à ça:
+
+```bash
+#!/bin/bash
+
+echo "🔒 Setting up SSL certificates..."
+
+# S'assure que la variable DOMAIN_NAME ne soit pas vide (-z)
+if [ -z "$DOMAIN_NAME" ]; then
+	echo "❌ Missing required environment variables (DOMAIN_NAME)."
+	exit 1
+fi
+
+# Vérifie et crée le dossier s'il n'est pas encore existant
+mkdir -p /etc/nginx/ssl
+
+# Vérifie si le certificat existe déjà (évite de le recréer à chaque démarrage)
+if [ ! -f /etc/nginx/ssl/nginx.crt ]; then
+    echo "📜 Generating self-signed SSL certificate..."
+    
+    # Utilise OpenSSL pour générer un certificat auto-signé valable 1 an (365 jours)
+    # -x509 : format de certificat
+    # -nodes : pas de mot de passe sur la clé privée
+    # -newkey rsa:2048 : crée une nouvelle clé RSA de 2048 bits
+    # -keyout : où écrire la clé privée
+    # -out : où écrire le certificat public
+    # -subj : informations sur l’émetteur (personnalisées ici pour 42 à Bruxelles)
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout /etc/nginx/ssl/nginx.key \
+        -out /etc/nginx/ssl/nginx.crt \
+        -subj "/C=BE/ST=Brussels/L=Brussels/O=42School/OU=student/CN=${DOMAIN_NAME}"
+
+    echo "✅ SSL certificate generated successfully!"
+else
+    echo "🔁 SSL certificate already exists, skipping..."
+fi
+
+echo "🚀 Starting NGINX..."
+# Lance le serveur NGINX en avant-plan (nécessaire pour Docker)
+exec nginx -g "daemon off;"
+```
+
+- Daemon
+    
+    Un daemon c’est un processus qui tourne en continu, prêt à faire quelque chose lorsqu’il est sollicité → ex: serveur web NGINX est un daemon car il reste actif en arrière-plan pour répondre aux requêtes HTTP
+    
+- Pourquoi daemon off ?
+    
+    Ce flag permet de démarrer NGINX au premier plan, ce qui est nécessaire pour que le container Docker reste actif. En effet, Docker attend un processus actif en avant-plan pour maintenir le container en vie.
+    
+
+| Abréviation | Signification | Valeur pour Bruxelles |
+| --- | --- | --- |
+| `C` | Country (code ISO) | `BE` |
+| `ST` | State (ou région) | `Bruxelles-Capitale` |
+| `L` | Locality (ville) | `Bruxelles` |
+| `O` | Organisation | `42` ou ce que tu veux |
+| `OU` | Unité organisationnelle | `42` ou `Inception` |
+| `CN` | Nom de domaine | `login.42.fr` (ou ton domaine réel) |
+| `UID` | Identifiant utilisateur | `login` (remplace par ton identifiant 42) |
+
+C’est bien beau d’avoir un script, mais faut aussi qu’on sache l’utiliser. T’as sûrement remarqué qu’il y avait des variables d’environnement. Du coup, il va falloir les définir dans un dossier `.env`qu’on mettra dans notre fichier `srcs`. Si t’as un doute la structure des fichiers est un peu plus haut.
+
+```
+# 🌐 Configuration du domaine - Nom de domaine local utilisé par NGINX et WordPress
+DOMAIN_NAME=<login>.42.fr
+```
+
+<aside>
+⚠️
+
+**Note importante** : pour accéder à ton site depuis la barre d’adresse, il faut associer `127.0.0.1:443` à `<login>.42.fr`, comme le font les sites en ligne avec leurs noms de domaine.
+Pour cela, ajoute la ligne suivante dans ton ficher `/etc/hosts`:
+
+`127.0.0.1     <login>.42.fr` 
+
+</aside>
+
+Évidemment va falloir rajouter ça à notre Dockerfile:
+
+```docker
+COPY tools/setup_ssl.sh /setup.sh
+RUN chmod +x /setup.sh
+```
+
+### Finaliser les permissions et le lancement
+
+```docker
+# Donne les droits en lecture/écriture/exécution pour le propriétaire, et lecture/exécution pour les autres
+# sur tous les fichiers/dossiers du répertoire /var/www/html
+RUN chmod -R 755 /var/www/html
+
+# Change le propriétaire des fichiers du dossier /var/www/html en 'www-data'
+# (l'utilisateur utilisé par NGINX pour exécuter les processus web)
+RUN chown -R www-data:www-data /var/www/html
+
+# Déclare le port 443 comme exposé (HTTPS)
+# Cela indique à Docker que ce port sera utilisé par le conteneur à l'exécution
+EXPOSE 443
+
+# Utilise le script bash comme point d’entrée (entrypoint)
+ENTRYPOINT ["bash", "/setup.sh"]
+```
+
+## MariaDB
+
+MariaDB c’est un système de gestion de bases de données relationnelles, open-source et communautaire. C'est un fork de MySQL, créé après le rachat de ce dernier par Oracle. Pourquoi un fork ? Parce qu’Oracle pourrait restreindre les libertés d’utilisation de MySQL alors que MariaDB reste 100% libre tout en maintenant une grande compatibilité avec MySQL.
+
+### Mais c’est quoi une base de données relationnelle ?
+
+MariaDB, comme MySQL, stocke les données dans des tables. Ces tables peuvent être liées entre elles par des clés primaires et étrangères. Par exemple: une table “utilisateurs” et une table “articles” reliées par l’ID de l’utilisateur.
+
+### Créer un Dockerfile de base pour MariaDB
+
+Rebelote, mais maintenant on sait comment ça marche:
+
+```docker
+FROM debian:bullseye
+```
+
+Et rerebelote, on build le container et on check si ça marche, exactement comme avant:
+
+```bash
+$ docker build -t mariadb .
+$ docker run -it mariadb
+```
+
+### L’installation de MariaDB dans le container
+
+Hop, on met à jour les dépendances, et clean le cache:
+
+```docker
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get install mariadb-server -y
+RUN rm -rf /var/lib/apt/lists/*
+```
+
+### Le fichier de config
+
+MariaDB se configure via des fichiers `.cnf`. Le fichier que nous allons modifier est:
+
+<aside>
+
+/etc/mysql/mariadb.conf.d/50-server.cnf
+
+</aside>
+
+Pour ce faire on va, comme à l’étape précédente, préparer un dossier `conf/` dans lequel on va créer un fichier `50-server.cnf`:
+
+```
+[mysqld]               # Section principale pour le serveur MariaDB
+
+# Exécuter MariaDB sous l’utilisateur mysql pour des raisons de sécurité
+user = mysql
+
+# Port par défaut pour les connexions MySQL (peut être modifié si nécessaire)
+# port = 3306
+
+# Fichier contenant le PID (identifiant de processus) (pas forcément nécessaire)
+pid-file = /run/mysqld/mysqld.pid
+
+# Répertoire d’installation de MariaDB
+basedir = /usr
+
+# Emplacement des fichiers de données de la base
+datadir = /var/lib/mysql
+
+# Répertoire pour les fichiers temporaires
+tmpdir = /tmp
+
+# Répertoire contenant les fichiers de traduction
+lc-messages-dir = /usr/share/mysql
+
+# Langue utilisée pour les messages du serveur
+lc-messages = en_US
+
+# Désactiver le verrouillage externe (améliore les performances en environnement conteneurisé)
+skip-external-locking
+
+# IMPORTANT : accepter les connexions depuis toutes les interfaces réseau
+# Cela permet aux autres conteneurs Docker (comme WordPress) de se connecter
+bind-address = 0.0.0.0
+
+# Supprimer automatiquement les anciens logs après 10 jours
+expire_logs_days = 10
+
+# Encodage utilisé par défaut (utf8mb4 prend en charge les emojis et caractères internationaux)
+character-set-server = utf8mb4
+collation-server = utf8mb4_general_ci
+```
+
+- Pour y voir un peu plus clair:
+    - `user` exécute MariaDB en tant qu'utilisateur `mysql`, pour des raisons de sécurité
+        - `user = mysql` spécifie l’utilisateur système qui exécute MariaDB
+    - `port = 3306` est le port standard pour MySQL/MariaDB
+    - `pid-file` : fichier où sera stocké le PID du processus MariaDB
+    - `basedir` : chemin d'installation de MariaDB
+    - `datadir` : répertoire contenant les fichiers de la base de données
+    - `tmpdir` : répertoire temporaire pour les opérations internes
+    - `lc-messages-dir` et `lc-messages` : configurent la langue des messages système
+    - `skip-external-locking` : désactive les verrouillages système pour de meilleures performances en conteneur
+    - `bind_address = 0.0.0.0` permet d’accepter des connexions depuis n’importe quelle IP
+    - `expire_logs_days` : nombre de jours avant la suppression automatique des logs
+    - `character-set-server` et `collation-server` : définissent l'encodage UTF-8 avec support emoji et caractères internationaux
+
+Maintenant on va copier notre fichier dans le Dockerfile avec:
+
+```docker
+COPY conf/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
+```
+
+### Le script d’initialisation
+
+On va créer un script d’initialisation `setup_mariadb.sh` à utiliser comme point d’entrée pour configurer automatiquement la base. 
+
+```bash
+#!/bin/bash
+
+echo "🚀 Démarrage de l'initialisation de MariaDB..."
+
+# S'assure que la variables requises ne soient pas vides (-z)
+if [ -z "$SQL_ROOT_PASSWORD" ] || [ -z "$SQL_DATABASE" ] || [ -z "$SQL_USER" ] || [ -z "$SQL_PASSWORD" ]; then
+    echo "❌ Variables d'environnement requises manquantes."
+    exit 1
+fi
+
+# Lancer le service MariaDB
+service mariadb start
+
+echo "🔗 Connexion à la base de données..."
+# Attendre que MariaDB soit prêt à accepter des connexions
+MAX_RETRIES=30
+COUNT=0
+while [ $COUNT -lt $MAX_RETRIES ]; do
+		if mysqladmin ping -h"localhost" --silent; then
+				echo "✅ Connexion à la base de données établie !"
+				break
+		fi
+		echo "🔄 En attente que MariaDB soit prêt... Tentative $((COUNT + 1))/$MAX_RETRIES"
+		sleep 2
+		COUNT=$((COUNT + 1))
+done
+
+if [ $COUNT -eq $MAX_RETRIES ]; then
+		echo "❌ Échec de la connexion à la base de données après $MAX_RETRIES tentatives."
+		exit 1
+fi
+
+echo "✅ MariaDB est prêt. Création de la base de données et des utilisateurs..."
+
+# Définir le mot de passe root
+mysql -u root << EOF
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${SQL_ROOT_PASSWORD}';
+FLUSH PRIVILEGES;
+EOF
+
+# Utiliser le mot de passe root pour la configuration suivante
+mysql -u root -p"${SQL_ROOT_PASSWORD}" << EOF
+CREATE DATABASE IF NOT EXISTS \`${SQL_DATABASE}\`;
+CREATE USER IF NOT EXISTS '${SQL_USER}'@'%' IDENTIFIED BY '${SQL_PASSWORD}';
+GRANT ALL PRIVILEGES ON \`${SQL_DATABASE}\`.* TO '${SQL_USER}'@'%';
+FLUSH PRIVILEGES;
+EOF
+
+echo "🎉 Configuration de la base de données terminée avec succès !"
+
+# Arrêt de MariaDB pour un redémarrage en mode production
+echo "🔥 Démarrage de MariaDB en avant-plan..."
+mysqladmin -u root -p"${SQL_ROOT_PASSWORD}" shutdown
+
+sleep 2
+
+# Démarrer MariaDB en avant-plan (foreground)
+exec mysqld_safe
+```
+
+Comme tu t’en doutes, on va définir les variables d’environnement dans le fichier:
+
+```
+# 🔐 Configuration de MariaDB (utilisateur root)
+# L'utilisateur root a tous les droits sur la base de données
+SQL_ROOT_PASSWORD=123root
+
+# 💾 Configuration de la base de données pour WordPress
+# Base dédiée à WordPress et identifiants utilisés par celui-ci
+SQL_DATABASE=wordpress
+SQL_USER=<login>
+SQL_PASSWORD=123
+```
+
+Maintenant on intègre le script dans le Dockerfile:
+
+```docker
+COPY tools/setup_mariadb.sh /setup.sh
+RUN chmod +x /setup.sh
+ENTRYPOINT ["bash", "/setup.sh"]
+```
+
+Le script repose sur des variables d’environnement, il ne faudra donc pas que t’oublies de les définir dans le fichier `.env`:
+
+- `SQL_DATABASE`
+- `SQL_USER`
+- `SQL_PASSWORD`
+- `SQL_ROOT_PASSWORD`
+
+## WordPress
+
+WordPress c’est un Content Management System (CMS) open-source utilisé par 43% des sites internet. Il sert à créer, gérer et publier du contenu sur un site web sans avoir besoin de coder. Ça repose sur PHP et une base de données (coucou MariaDB).
+
+On va donc créer un container WordPress sans utiliser d’image officielle mais en partant d’une image Debian.
+
+### Le Dockerfile pour WordPress
+
+On crée un nouveau Dockerfile dans un nouveau dossier `requirements/wordpress.`
+
+```docker
+FROM debian:bullseye
+
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get install -y wget \
+		php7.4-fpm php7.4-mysql \
+    mariadb-client && \
+    rm -rf /var/lib/apt/lists/*
+```
+
+- Les paquets qu’on trouve ici
+    - `wget` : pour télécharger WP-CLI
+    - `php7.4-fpm` : interface entre NGINX et PHP
+    - `php7.4-mysql` : extension pour interagir avec MariaDB
+    - `mariadb-client` : pour vérifier ou interagir avec le serveur MariaDB à distance
+    
+    <aside>
+    ⚠️
+    
+    Vous remarquerez que l’on installe pas le package `php` . La raison est que la version *bullseye* de *Debian* est fournie avec `php 7.4` . Conséquence 1, l’environnement de notre container **comprendra déjà `php`** , conséquence 2, on peut **préciser les versions** pour `php7.4-fpm` et `php7.4-mysql` pour une meilleure cohérence.
+    
+    </aside>
+    
+
+### La configuration de PHP
+
+Comme pour les autres loulous, on va préparer un dossier `conf/` dans lequel on va créer un fichier `www.conf`:
+
+```
+[www]
+; Utilisateur et groupe sous lesquels les processus PHP-FPM s'exécuteront
+user = www-data
+group = www-data
+
+; Écoute sur toutes les interfaces réseau, sur le port 9000
+; Cela permet à NGINX (dans un autre conteneur) de se connecter à PHP-FPM
+listen = 0.0.0.0:9000
+
+; Propriétaire et groupe du socket utilisé par PHP-FPM (utile si on utilise un fichier socket au lieu d’un port)
+listen.owner = www-data
+listen.group = www-data
+
+; Stratégie de gestion des processus PHP : "dynamic" signifie que PHP-FPM ajuste dynamiquement le nombre de processus selon la charge
+pm = dynamic
+
+; Nombre maximum de processus enfants pouvant être lancés
+pm.max_children = 5
+
+; Nombre de processus lancés au démarrage
+pm.start_servers = 2
+
+; Nombre minimum de processus inactifs à conserver (pour répondre rapidement à une demande)
+pm.min_spare_servers = 1
+
+; Nombre maximum de processus inactifs à garder (au-delà, ils seront tués)
+pm.max_spare_servers = 3
+```
+
+Et on ajoute dans le Dockerfile:
+
+```docker
+COPY conf/www.conf /etc/php/7.4/fpm/pool.d/www.conf
+```
+
+### L’installation de WP-CLI et son rôle
+
+WP-CLI c’est une interface en ligne de commande pour administrer WordPress sans passer par l’interface web. Ça va nous permettre d’installer le CMS, le configurer en ligne de commande (`wp config create`, `wp core install`) et de gérer les utilisateurs, plugins et thèmes.
+
+Pour l’installer c’est pas compliqué:
+
+```docker
+RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -O /usr/local/bin/wp
+RUN chmod +x /usr/local/bin/wp
+```
+
+On télécharge le wp-cli avec `wget`, le renomme “*wp”* et place dans les fichiers binaire de notre Docker avec l’option `-O /usr/local/bin/wp`, puis on le rend exécutable avec `chmod`.
+A quoi sert cette configuration, me direz-vous? Elle permet d’utiliser *wp-cli* directement depuis le conteneur en utilisant la commande `wp [...]`. Ce que l’on aura besoin dans le point suivant.
+
+### Le script d’initialisation WordPress
+
+Maintenant, comme pour nos deux autres jolis containers, on va créer un script `setup_wordpress.sh` pour installer et configurer automatiquement WordPress à son premier lancement :
+
+```bash
+#!/bin/bash
+
+echo "🚀 Lancement de l'installation de WordPress..."
+
+# S'assure que la variables requises ne soient pas vides (-z)
+if [ -z "$SQL_DATABASE" ] || [ -z "$SQL_USER" ] || \
+	[ -z "$SQL_PASSWORD" ] || [ -z "$DOMAIN_NAME" ] || \
+	[ -z "$WP_ADMIN_USER" ] || [ -z "$WP_ADMIN_PASSWORD" ] || \
+	[ -z "$WP_ADMIN_EMAIL" ] || [ -z "$WP_USER" ] || \
+	[ -z "$WP_USER_EMAIL" ] || [ -z "$WP_USER_PASSWORD" ]; then
+    echo "❌ Variables d'environnement requises manquantes."
+    exit 1
+fi
+
+# Temps d'attente pour s'assurer que MariaDB est bien lancé
+echo "🔗 Connexion à la base de données..."
+sleep 10
+
+# Vérifie que la base de données est prête à accepter les connexions
+MAX_RETRIES=30
+COUNT=0
+while [ $COUNT -lt $MAX_RETRIES ]; do
+		if mysqladmin ping -h"mariadb" -u"$SQL_USER" -p"$SQL_PASSWORD" --silent; then
+				echo "✅ Connexion à la base de données établie !"
+				break
+		fi
+		echo "🔄 En attente que MariaDB soit prêt... Tentative $((COUNT + 1))/$MAX_RETRIES"
+		sleep 2
+		COUNT=$((COUNT + 1))
+done
+
+if [ $COUNT -eq $MAX_RETRIES ]; then
+		echo "❌ Échec de la connexion à la base de données après $MAX_RETRIES tentatives."
+		exit 1
+fi
+
+# Vérifie si WordPress est déjà installé (pour éviter une double initialisation)
+if [ ! -f /var/www/html/wp-config.php ]; then
+    echo "📥 Téléchargement de WordPress..."
+    wp core download --version=6.0 --locale=fr_FR --allow-root
+
+    echo "⚙️ Création du fichier wp-config.php..."
+    wp config create --allow-root \
+        --dbname="${SQL_DATABASE}" \
+        --dbuser="${SQL_USER}" \
+        --dbpass="${SQL_PASSWORD}" \
+        --dbhost="mariadb:3306" \
+        --path="/var/www/html/"
+
+    echo "🛠️ Installation de WordPress..."
+    wp core install --allow-root \
+        --url="${DOMAIN_NAME}" \
+        --title="Inception42" \
+        --admin_user="${WP_ADMIN}" \
+        --admin_password="${WP_ADMIN_PASSWORD}" \
+        --admin_email="${WP_ADMIN_EMAIL}" \
+        --path="/var/www/html/"
+
+    echo "👤 Création de l'utilisateur ${WP_USER}..."
+    wp user create "${WP_USER}" "${WP_USER_EMAIL}" \
+        --user_pass="${WP_USER_PASSWORD}" \
+        --role=author \
+        --allow-root \
+        --path="/var/www/html/"
+else
+    echo "ℹ️ WordPress est déjà installé. Aucun changement effectué."
+fi
+
+# Création du dossier requis par PHP-FPM si besoin
+mkdir -p /run/php
+
+# Droits d'accès pour NGINX/PHP
+chown -R www-data:www-data /var/www/html
+chmod -R 755 /var/www/html
+
+# Lancement de PHP-FPM en avant-plan (pour que le container reste actif)
+echo "🔥 Démarrage de PHP-FPM…"
+sleep 2
+exec php-fpm7.4 -F
+```
+
+Tu commences à connaître la chanson, on ajoute les variables d’environnement qui manquent:
+
+```
+# 👑 Compte administrateur WordPress (accès complet à l’interface d’administration)
+WP_ADMIN_USER=superuser
+WP_ADMIN_PASSWORD=123admin
+# l’adresse est obligatoire mais n’est pas très importante étant donnée que l’on fait tourner le site en local
+WP_ADMIN_EMAIL=john@doe.org
+
+# 👤 Utilisateur WordPress secondaire (droits limités, rôle = auteur)
+WP_USER=username
+WP_USER_PASSWORD=123user
+# cette adresse doit être différente de celle de l'admin
+WP_USER_EMAIL=username@inception.xyz
+
+# 📂 Volumes - Emplacements locaux pour stocker les données de MariaDB et WordPress
+SQL_DATA_PATH=/home/<login>/data/mysql
+WP_DATA_PATH=/home/<login>/data/wordpress
+```
+
+On rajoute dans le Dockerfile:
+
+```docker
+# Crée le dossier racine pour WordPress
+RUN mkdir -p /var/www/html
+
+# Copie le script d’installation de WordPress
+COPY tools/setup_wordpress.sh /setup.sh
+
+# Rend le script exécutable
+RUN chmod +x /setup.sh
+
+# Déclare le port 9000 utilisé par PHP-FPM
+EXPOSE 9000
+
+# Définit le répertoire de travail par défaut.
+# Important pour que notre script install wordpress au bon endroit
+WORKDIR /var/www/html
+
+# Lance l’installation automatique à l’exécution du container
+ENTRYPOINT ["bash", "/setup.sh"]
+```
+
+## Le tant attendu `docker-compose.yml`
+
+Maintenant qu’on a un truc cohérent et qui semble pouvoir fonctionner ensemble, faut qu’on relie tout ça. C’est là que le magnifique `docker-compose.yml` vient nous sauver les miches.
+
+Avant de plonger dans le vif du sujet, on va reprendre les bases.
+
+### Quelques rappels importants
+
+Un fichier `docker-compose` commence toujours par la version (la plus courante est `"3"`).
+
+L’indentation est critique, comme en Python. Respecte les espaces (et dans la vie en général).
+
+La structure de base est :
+
+```yaml
+version: "3"
+services:
+  ...
+volumes:
+  ...
+networks:
+  ...
+```
+
+Maintenant que c’est clair, passons aux choses sérieuses (faites oui même si vous n’êtes pas sûr, on y est presque!).
+
+### Le fichier `docker-compose.yml` final et commenté
+
+```yaml
+version: "3"  # 📌 Version de la syntaxe docker-compose utilisée
+
+services:
+  # 🔹 Service MariaDB
+  mariadb:
+    build:                      # 🔨 Indique comment construire l'image
+      context: ./requirements/mariadb  # 📁 Chemin vers le dossier contenant le Dockerfile
+      dockerfile: Dockerfile          # 📄 Nom du Dockerfile
+    container_name: mariadb     # 🧱 Nom personnalisé du conteneur
+    env_file: .env              # 📦 Variables d'environnement à charger
+    volumes:                    # 💾 Volume persistant pour les données MariaDB
+      - mariadb_data:/var/lib/mysql
+    networks:                   # 🌐 Réseau Docker (pour que les services puissent se voir)
+      - inception
+    restart: unless-stopped     # 🔁 Redémarre sauf si on l'arrête manuellement
+
+  # 🔹 Service WordPress (avec PHP-FPM)
+  wordpress:
+    build:
+      context: ./requirements/wordpress
+      dockerfile: Dockerfile
+    container_name: wordpress
+    env_file: .env
+    volumes:
+      - wordpress_data:/var/www/html  # 📁 Dossier partagé contenant les fichiers WP
+    networks:
+      - inception
+    depends_on:
+      - mariadb               # ⏳ Lance WordPress uniquement si MariaDB est prêt
+    restart: unless-stopped
+
+  # 🔹 Service NGINX
+  nginx:
+    build:
+      context: ./requirements/nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    env_file: .env
+    ports:
+      - "443:443"             # 🌍 Port HTTPS exposé localement
+    volumes:
+      - wordpress_data:/var/www/html  # 📁 Partage les fichiers WordPress avec NGINX
+    networks:
+      - inception
+    depends_on:
+      - wordpress             # ⏳ NGINX attend que WordPress soit prêt
+    restart: unless-stopped
+
+# 🔸 Définition des volumes persistants
+volumes:
+  mariadb_data:
+    driver: local             # 🛠️ Stocke les données localement
+    driver_opts:
+      type: none
+      o: bind
+      device: ${SQL_DATA_PATH}   # 📍 Point de montage sur l’hôte
+
+  wordpress_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${WP_DATA_PATH}      # 📍 Dossier de persistance WordPress
+
+# 🔸 Réseau personnalisé pour que les containers puissent communiquer
+networks:
+  inception:
+    driver: bridge            # 🧭 Réseau bridge : tous les conteneurs partagent un réseau isolé
+```
+
+### C’est quoi un volume persistant et à quoi ça sert ?
+
+Un volume persistant, c’est comme un disque dur externe branché à ton conteneur. 
+
+Contrairement au système de fichiers interne d’un conteneur, qui disparaît quand le conteneur est détruit, un volume persistant conserve tes données même si tu fais :
+
+- `docker container rm`
+- `docker-compose down`
+- ou que ton conteneur crash, tout simplement
+
+Prenons un exemple concret. Sans volume persistant, tu lances MariaDB ou WordPress, tu ajoutes des données (site, articles, comptes, …) et tu redémarres le conteneur → **TOUT EST PERDU 🙃**
+
+Avec un volume persistant,  les données importantes (base de données, fichiers WordPress, …) sont sauvegardées à l’extérieur du conteneur, dans un dossier local de ta machine hôte.
+
+**Ce qui se passe vraiment**
+
+Quand tu as dans `docker-compose.yml` :
+
+```yaml
+- mariadb_data:/var/lib/mysql
+```
+
+et que `mariadb_data` est défini comme un bind mount vers `/home/<login>/data/mysql` :
+
+```yaml
+device: /home/<login>/data/mysql
+```
+
+Alors :
+
+- `/home/<login>/data/mysql` sur ton hôte **et**
+- `/var/lib/mysql` dans ton conteneur
+
+sont en fait **le même dossier** vu de deux endroits différents. Donc pas de duplication, c’est comme si les deux dossiers étaient des caves de maison et que tu avais creusé un tunnel entre les deux caves: elles ne font qu’un seul espace.
+
+---
+
+# Revoyons toute l’architecture
+
+## Architecture réseau de conteneurs
+
+Docker network: `inception`
+
+Tout les containers communiquent à travers ce *bridge network* personnalisé.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                Docker Network: inception                │
+│                     (bridge driver)                     │
+│                                                         │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐  │
+│  │    NGINX    │    │ WordPress   │    │   MariaDB   │  │
+│  │    :443     │◄──►│ PHP-FPM:9000│◄──►│    :3306    │  │
+│  │             │    │             │    │             │  │
+│  └─────────────┘    └─────────────┘    └─────────────┘  │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+         │
+         ▼ Port 443 exposed to host
+    ┌─────────────┐
+    │  Host OS    │
+    │ localhost   │
+    └─────────────┘
+```
+
+Schéma de communication:
+
+1. **NGINX → WordPress (PHP-FPM)**
+    - NGINX redirige les requêtes PHP vers `wordpress:9000` via **FastCGI.**
+    - Concrètement possible grâce à:
+        - La ligne `fastcgi_pass wordpress:9000;` dans *nginx.conf* **et**
+        - `listen = 0.0.0.0:9000` dans le *www.conf* de **PHP-FPM**.
+2. **WordPress → MariaDB**
+    - WordPress se connecte à `mariadb:3306` pour récupérer des données (articles, utilisateurs, commentaires, etc)
+    - Lien défini dans notre *wp-config.php,* généré par *setup_wordpress.sh* avec `--dbhost="mariadb:3306"`
+3. **Host → NGINX**
+    - Dans le container NGINX, le port 443 est ouvert avec `listen **443** ssl http2;` configuré dans le fichier *nginx.conf* mais ça ne concerne que l’intérieur de ce container, pas la machine hôte.
+    - Grâce au mappage, *docker-compose.yml*, `- “443:443”` dans le paramètre `ports:` du service NGINX. Le port 443 hôte (valeur à gauche) fusionnent avec le 443 du container (valeur à droite).
+    - Le browser envoie les requêtes `/get index.html` sur le port exposé en 443 (HTTPS) qui, dorénavant, est connectée avec l’intérieur du container.
+
+## Architecture des volumes
+
+Voici, visuellement, le mapping des volumes
+
+```
+      ┌───────────────────────── Machine hôte ─────────────────────────┐
+      │                                                                │
+      │  /home/<login>/data/                                           │
+      │  ├── mysql/                                                    │
+      │  └── wordpress/                                                │
+      │                                                                │
+      └────────────────────────────────────────────────────────────────┘
+                                   │                                    
+                                   │ (Volumes montés en mode bind)     
+                                   ▼                                   
+      ┌─────────────────────Conteneurs Docker ─────────────────────────┐
+      │                                                                │
+      │ [mariadb]     /var/lib/mysql    ←  données DB persistantes     │
+      │                                                                │
+      │ [wordpress]   /var/www/html     ←  fichiers WP persistants     │
+      │ [nginx]       /var/www/html     ←  sert les mêmes fichiers WP  │
+      │                                                                │
+      └────────────────────────────────────────────────────────────────┘
+      
+      
+      Lier comme suit:
+      
+      ┌────── hôte ───────┐    ┌── Conteneurs ──┐      
+      │.../data/mysql       ←→   /var/lib/mysql │
+      │                   │    │                │
+      │.../data/wordpress   ←→   /var/www/html  │
+      └───────────────────┘    └────────────────┘
+```
+
+## Workflow global: Navigateur ←→ WordPress
+
+```
+START : Requête du navigateur
+        ↓
+1. [Résolution DNS]
+   /etc/hosts : <login>.42.fr → 127.0.0.1:443
+        ↓
+3. [NGINX (en SSL)]
+   - Reçoit la requête HTTPS (via 443:443)
+   - Vérifie le domaine
+   - Si une page PHP est demandée : transfert vers WordPress
+        ↓
+4. [PHP-FPM]
+   - Demande la page via fastcgi_pass wordpress:9000
+        ↓
+5. [WordPress]
+   - Se connecte à mariadb:3306 pour remplir la page PHP avec les bonnes données
+        ↓
+6. [MariaDB Query]
+   - Exécute la ou les requêtes SQL
+   - Renvoie les résultats à WordPress
+        ↓
+7. [WordPress]
+   - Remplit la page avec les données récupérées
+   - Envoie le fichier `.php` à PHP-FPM
+        ↓
+8. [PHP-FPM]
+   - Transforme le fichier PHP en HTML
+        ↓
+9. [NGINX]
+   - NGINX réceptionne et renvoie la page HTML sur le port 443
+        ↓
+FIN : [Navigateur]
+   - Le navigateur affiche la page
+```
+
+# Comment je lance mon projet
+
+Pendant le développement, tu vas vouloir tester ton projet très souvent (et tu as intérêt !). Pour éviter de répéter sans cesse les mêmes commandes Docker, on a créé un script `run_docker.sh`, que tu vas placer à la racine de ton projet (au même niveau que ton Makefile par exemple), qui simplifie tout ça grâce à différents flags :
+
+**Les options du script**
+
+- **`./run_docker.sh`**
+Lance le projet en utilisant les images et données existantes (mode classique).
+- **`./run_docker.sh --blank-start`**
+Redémarre tout à zéro : supprime les volumes, nettoie les données, reconstruit les images et relance le projet. Idéal pour tester une installation "from scratch".
+- **`./run_docker.sh --clean`**
+Nettoie tout l’environnement (volumes, données, containers) puis s’arrête. Pratique pour repartir sur une base propre ou stopper tous les services.
+
+**Ce que fait le script**
+
+- Met à jour le fichier .env pour s’adapter à ton utilisateur
+- Ajoute automatiquement le domaine ${DOMAIN_NAME} dans hosts si besoin
+- Gère la création des dossiers de données pour MariaDB et WordPress
+- Lance, reconstruit ou nettoie les containers selon l’option choisie
+
+```bash
+#!/bin/bash
+
+echo -e "\e[32mLaunching the project...\e[0m"
+
+BLANK_START=false
+CLEAN_ONLY=false
+
+if [[ "$1" == "--clean" ]]; then
+        CLEAN_ONLY=true
+fi
+
+if [[ "$1" == "--blank-start" ]]; then
+        BLANK_START=true
+fi
+
+sed -i "s|/home/[^/]\+/data/|/home/$USER/data/|g" .env
+
+if [ ! -f .env ]; then
+				echo -e "\e[31m--> .env file not found. Please create it based on the .env.example file.\e[0m"
+				exit 1
+fi
+
+source .env
+
+if $BLANK_START || $CLEAN_ONLY; then
+        if $CLEAN_ONLY; then
+                echo -e "\e[33m--> Cleaning up environment...\e[0m"
+        else
+                echo -e "\e[33m--> Starting with a new image and clean volumes...\e[0m"
+        fi
+        sudo docker compose down --volumes --remove-orphans
+        sudo docker system prune -f
+        sudo rm -rf "${SQL_DATA_PATH}"
+        sudo rm -rf "${WP_DATA_PATH}"
+        echo -e "\e[33m--> All volumes and data directories cleaned.\e[0m"
+        if $CLEAN_ONLY; then
+                echo -e "\e[32m--> Environment cleanup complete: exiting...\e[0m"
+                exit 0
+        fi
+else
+        echo -e "\e[34m--> Continuing with existing data...\e[0m"
+        sudo docker compose down --remove-orphans
+fi
+
+if ! grep -q "${DOMAIN_NAME}" /etc/hosts; then
+        echo "127.0.0.1 ${DOMAIN_NAME}" | sudo tee -a /etc/hosts
+        echo -e "\e[32m--> The domain name ${DOMAIN_NAME} has been added to /etc/hosts."
+else
+        echo -e "\e[34m--> The domain name ${DOMAIN_NAME} is already present in /etc/hosts."
+fi
+
+mkdir -p "${SQL_DATA_PATH}"
+mkdir -p "${WP_DATA_PATH}"
+
+if $BLANK_START; then
+        echo -e "\e[33m--> Building images from scratch...\e[0m"
+        sudo docker compose build --no-cache
+        sudo docker compose up
+else
+        sudo docker compose up --build
+fi
+```
+
+> 💡 Astuce: Utilise `--blank-start` si tu veux vraiment tester ton installation comme si c’était la première fois.
+> 
+
+> ⚠️ **Attention** ce script modifie `/etc/host`, `.env` , supprime les dossiers que tu auras mis dans `${SQL_DATA_PATH}` et `${WP_DATA_PATH}`, et nettoie les images et containers non-utilisés. Te voilà averti et prêt à finir ce projet !
+> 
+
+# Un petit mot pour la fin
+
+Avec tout ça, tu devrais avoir compris globalement le fonctionnement de Docker et su commencer (et j’espère finir) le projet Inception. Évidemment, n’étant que de simples codeurs débutants, ce petit guide explicatif est sujet à de potentielles fautes ou mauvaises informations malgré nos recherches. S’il y a quoi que ce soit qui te semble incorrect ou raccourci ou qui pourrait bénéficier d’une quelconque modification, n’hésite pas à nous envoyer un message à l’adresse mail [eduardoschmitz.p@gmail.com](mailto:eduardoschmitz.p@gmail.com) ou jonathanveirman@gmail.com.
+
+On espère vraiment que ce guide t’aura été utile et que ça t’aura permis de passer un moment sympa sur ce projet.
+
+Merci pour la lecture et des bisous,
+Jonny et Edou
