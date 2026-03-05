@@ -28,24 +28,25 @@ if $BLANK_START || $CLEAN_ONLY; then
     else
         echo "Starting fresh with clean volumes..."
     fi
-    sudo docker compose -f srcs/docker-compose.yml down --volumes --remove-orphans
-    sudo docker system prune -f
-    sudo rm -rf "${SQL_DATA_PATH}"
-    sudo rm -rf "${WP_DATA_PATH}"
+    docker compose -f srcs/docker-compose.yml down --volumes --remove-orphans
+    docker system prune -f
+    rm -rf "${SQL_DATA_PATH}"
+    rm -rf "${WP_DATA_PATH}"
     echo "Cleanup complete."
     if $CLEAN_ONLY; then
         exit 0
     fi
 else
     echo "Continuing with existing data..."
-    sudo docker compose -f srcs/docker-compose.yml down --remove-orphans
+    docker compose -f srcs/docker-compose.yml down --remove-orphans
 fi
 
 if ! grep -q "${DOMAIN_NAME}" /etc/hosts; then
-    echo "127.0.0.1 ${DOMAIN_NAME}" | sudo tee -a /etc/hosts
-    echo "Added ${DOMAIN_NAME} to /etc/hosts"
+    echo "WARNING: ${DOMAIN_NAME} not found in /etc/hosts"
+    echo "Please ask an admin or run manually:"
+    echo "  echo '127.0.0.1 ${DOMAIN_NAME}' | sudo tee -a /etc/hosts"
 else
-    echo "${DOMAIN_NAME} already in /etc/hosts"
+    echo "${DOMAIN_NAME} already in /etc/hosts - OK"
 fi
 
 mkdir -p "${SQL_DATA_PATH}"
@@ -53,8 +54,8 @@ mkdir -p "${WP_DATA_PATH}"
 
 if $BLANK_START; then
     echo "Building images from scratch..."
-    sudo docker compose -f srcs/docker-compose.yml build --no-cache
-    sudo docker compose -f srcs/docker-compose.yml up
+    docker compose -f srcs/docker-compose.yml build --no-cache
+    docker compose -f srcs/docker-compose.yml up
 else
-    sudo docker compose -f srcs/docker-compose.yml up --build
+    docker compose -f srcs/docker-compose.yml up --build
 fi
