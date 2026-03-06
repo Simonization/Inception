@@ -107,16 +107,26 @@ Docker named volumes are managed by Docker itself. They provide better portabili
 - [MariaDB knowledge base](https://mariadb.com/kb/en/)
 - [Docker secrets documentation](https://docs.docker.com/compose/how-tos/use-secrets/)
 - [Dockerfile best practices](https://docs.docker.com/build/building/best-practices/)
-- Guide written by Eduardo and Jonathan (42 Brussels peers)
+- Thanks to Eduardo for guidance
 
+### Videos
+
+- [full course on Docker, recommended on Slack World, 4h](https://www.youtube.com/watch?v=RqTEHSBrYFw)
+- [docker in 18min](https://www.youtube.com/watch?v=Ud7Npgi6x8E)
+- [Docker in 5min, bande de codeurs](https://www.youtube.com/watch?v=mspEJzb8LC4)
+- [Docker file & docker compose, bande de codeurs, 17min](https://www.youtube.com/watch?v=ES4BcZcsBdU)
+- [Docker in 100 Seconds, Fireship](https://youtu.be/Gjnup-PuquQ)
+- [100 Docker Concepts you Need to know, Fireship, 8min](https://youtu.be/rIrNIzy6U_g?si=V6OE1NSWnh8RSdOF)
+- [Kubernetes in 100 Seconds, Fireship](https://youtu.be/PziYflu8cB8)
+  
 ### AI Usage
 
 AI (Claude by Anthropic) was used as a development assistant throughout this project for:
 
-- **Planning**: Creating a structured 2-day work plan, identifying compliance risks, and prioritizing tasks
+- **Planning**: Creating a structured work plan
 - **Code review**: Analyzing existing Dockerfiles, entrypoint scripts, and docker-compose configuration for issues and improvements
-- **Implementation**: Helping implement Docker secrets integration, writing entrypoint scripts that read from `/run/secrets/`, and updating docker-compose.yml
 - **Documentation**: Drafting README.md, USER_DOC.md, and DEV_DOC.md based on project requirements
 - **Debugging**: Troubleshooting container communication issues, volume permissions, and MariaDB initialization
 
 All AI-generated code and documentation was reviewed, understood, and adapted by the student before inclusion in the project.
+
