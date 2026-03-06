@@ -1,4 +1,4 @@
-version: "3"
+version: "3.8"
 
 services:
   mariadb:
@@ -7,6 +7,9 @@ services:
       dockerfile: Dockerfile
     container_name: mariadb
     env_file: .env
+    secrets:
+      - db_password
+      - db_root_password
     volumes:
       - mariadb_data:/var/lib/mysql
     networks:
@@ -19,6 +22,9 @@ services:
       dockerfile: Dockerfile
     container_name: wordpress
     env_file: .env
+    secrets:
+      - db_password
+      - credentials
     volumes:
       - wordpress_data:/var/www/html
     networks:
@@ -61,3 +67,11 @@ volumes:
 networks:
   inception:
     driver: bridge
+
+secrets:
+  db_password:
+    file: ../secrets/db_password.txt
+  db_root_password:
+    file: ../secrets/db_root_password.txt
+  credentials:
+    file: ../secrets/credentials.txt
