@@ -1,107 +1,126 @@
-# Inception Project — 2-Day Plan
+# Inception Project — Updated Plan
 
-## Current State
+## Progress Review (as of latest commits)
 
-The repo has all core infrastructure files in place:
-- 3 Dockerfiles (nginx, mariadb, wordpress) — all debian:bullseye
-- 3 config files (nginx.conf, 50-server.cnf, www.conf)
-- 3 entrypoint scripts (setup_ssl.sh, setup_mariadb.sh, setup_wordpress.sh)
-- docker-compose.yml with volumes, networks, depends_on
-- .env / .env.example / .gitignore
-- Makefile + run_docker.sh
+### DONE
+- [x] Step 2: Docker secrets wired into docker-compose.yml + entrypoint scripts
+- [x] Step 5: Documentation written (README.md, USER_DOC.md, DEV_DOC.md)
+- [x] Entrypoint scripts use `exec` for PID 1
+- [x] Bounded retry loops (no `while true`)
+- [x] `restart: unless-stopped` on all containers
+- [x] No `network: host`, `--link`, `links:` in docker-compose
+- [x] No `latest` tag in Dockerfiles
+- [x] No passwords in Dockerfiles
+- [x] Named volumes with host-path mapping
+- [x] NGINX sole entry point on port 443, TLSv1.2/TLSv1.3
+- [x] Admin username `superuser` (no "admin"), two WP users configured
+- [x] README has italic first line, all required sections + 4 comparisons + AI usage
 
-## Issues to Fix Before Testing
+### CRITICAL ISSUES REMAINING
 
-1. **`/etc/hosts`** — Need `127.0.0.1 slangero.42.fr` added (requires admin or pre-existing entry)
-2. **Docker secrets** — Passwords are only in `.env`. The subject says credentials in the repo (outside secrets) = failure. Must wire `secrets/` files into docker-compose and entrypoint scripts.
-3. **Documentation** — README.md, USER_DOC.md, DEV_DOC.md are all empty and mandatory for validation.
-4. **`.dockerignore` files** — All empty, should exclude unnecessary files from build context.
+1. **`srcs/.env` is tracked in git** — Commit 03a2934 added it. `.gitignore` lists it but the file was committed before/force-added. Must `git rm --cached srcs/.env` to untrack. Evaluators WILL check `git ls-files` and this alone can fail the project.
 
----
+2. **`secrets/` directory does not exist** — No folder, no files. Docker-compose WILL fail at startup because it references `../secrets/db_password.txt`, `../secrets/db_root_password.txt`, `../secrets/credentials.txt`. This is 100% blocking.
 
-## DAY 1 — Thursday (8:00–20:00, ~12h)
+3. **`.dockerignore` files are all empty** — Should exclude `.git`, `*.md`, `tools/`, etc. from build context. Minor but shows lack of polish.
 
-### Step 1: Fix sudo & first build (1.5h)
-- Confirm `run_docker.sh` has no sudo commands
-- Check `/etc/hosts` for domain entry, get it added if missing
-- Run `make re` — get the first build attempt going
-- Debug any immediate build failures
+4. **`Makefile` `fclean` just aliases `clean`** — Should also remove Docker images (`docker rmi`) for a true full clean. Evaluators may test `make fclean && make re`.
 
-### Step 2: Add Docker secrets (2h)
-- Populate `secrets/db_password.txt`, `secrets/db_root_password.txt`, `secrets/credentials.txt`
-- Add `secrets:` section to `docker-compose.yml`
-- Update entrypoint scripts to read from `/run/secrets/` files
-- Keep `.env` for non-sensitive config (DOMAIN_NAME, SQL_DATABASE, data paths)
+5. **`run_docker.sh` sed runs before .env existence check** — Line 16 does `sed -i` on `.env`, line 18 checks if it exists. Swap order or guard the sed.
 
-### Step 3: Test & debug full stack (3h)
-- MariaDB starts and initializes the database
-- WordPress connects to MariaDB and completes installation
-- NGINX serves WordPress over HTTPS on port 443
-- `https://slangero.42.fr` loads in browser (accept self-signed cert warning)
-- Both WP users exist: admin ("superuser") + author
-- Verify admin username doesn't contain "admin" (superuser is fine)
-
-### Step 4: Verify all project requirements (1.5h)
-Checklist:
-- [ ] Containers restart on crash (`restart: unless-stopped`)
-- [ ] No `tail -f`, `sleep infinity`, `while true` in scripts
-- [ ] No `network: host`, `--link`, or `links:` in docker-compose
-- [ ] No `latest` tag in Dockerfiles
-- [ ] No passwords in Dockerfiles
-- [ ] Named volumes (not raw bind mounts)
-- [ ] NGINX is sole entry point on port 443 only
-- [ ] TLSv1.2 or TLSv1.3 only
-- [ ] All scripts use `exec` for PID 1 best practice
-- [ ] `.env` is gitignored
-- [ ] Secrets folder is gitignored
-
-### Step 5: Write documentation (2h)
-- **README.md**: project description, instructions, resources, AI usage, comparisons (VM vs Docker, Secrets vs Env, Docker Network vs Host, Volumes vs Bind Mounts)
-- **USER_DOC.md**: services overview, start/stop, access website + admin panel, manage credentials, verify services
-- **DEV_DOC.md**: prerequisites, setup from scratch, build & launch with Makefile, container/volume management, data storage & persistence
-
-### Buffer/Breaks: ~2h
+6. **`run_docker.sh` runs `docker compose up` in foreground** — No `-d` flag. Terminal stays locked. Evaluators expect to get their prompt back.
 
 ---
 
-## DAY 2 — Friday (11:00–19:00, ~8h)
+## PRIORITY LIST — What To Do Next
 
-### Step 6: Full clean test (1.5h)
-- `make fclean` then `make re` — test from absolute scratch
-- Verify data persists: `make clean` then `make` (should keep data)
-- Confirm WordPress loads, both users work, HTTPS works
+### P0 — DO THESE FIRST (project-failing if missed)
 
-### Step 7: Bonus services (3h, optional — only if mandatory is perfect)
-- **Redis cache** for WordPress (easiest bonus)
-- **Adminer** (quick database UI, one Dockerfile)
-- **Static website** (simple HTML/CSS/JS, not PHP)
-- Each bonus = own Dockerfile + own container + entry in docker-compose
+#### 1. Untrack `.env` from git
+```bash
+git rm --cached srcs/.env
+git commit -m "Remove .env from git tracking (security requirement)"
+```
+Verify: `git ls-files srcs/.env` should return nothing.
 
-### Step 8: Defense preparation (2h)
-- Practice explaining: Docker architecture, container communication, full request flow
-- Know commands: `docker exec`, `docker logs`, `docker inspect`, `docker volume ls`
-- Be ready for live code modifications during evaluation
-- Understand: browser → NGINX (443/SSL) → PHP-FPM (9000) → WordPress → MariaDB (3306)
+#### 2. Create secrets directory and files
+```bash
+mkdir -p secrets
+echo "CHANGE_ME" > secrets/db_password.txt
+echo "CHANGE_ME" > secrets/db_root_password.txt
+printf "WP_ADMIN_PASSWORD=CHANGE_ME\nWP_USER_PASSWORD=CHANGE_ME\n" > secrets/credentials.txt
+```
+These must exist locally but NOT be committed (already gitignored).
 
-### Buffer: ~1.5h
+#### 3. First build test
+- Ensure `/etc/hosts` has `127.0.0.1 slangero.42.fr`
+- Run `make re`
+- Debug until all 3 containers are running
+- Verify `https://slangero.42.fr` loads WordPress
 
----
+### P1 — FIX BEFORE EVALUATION
 
-## DAY 3 — Saturday: Corrections at school
+#### 4. Fix Makefile targets
+```makefile
+all:
+	@bash run_docker.sh
 
----
+clean:
+	@bash run_docker.sh --clean
 
-## Time Summary
+fclean: clean
+	@docker rmi -f $$(docker images -qa) 2>/dev/null || true
 
-| Step | Description | Hours | When |
-|------|------------|-------|------|
-| 1 | Fix sudo + first build | 1.5 | Day 1 morning |
-| 2 | Docker secrets | 2.0 | Day 1 morning |
-| 3 | Test & debug full stack | 3.0 | Day 1 afternoon |
-| 4 | Verify requirements | 1.5 | Day 1 late afternoon |
-| 5 | Write 3 doc files | 2.0 | Day 1 evening |
-| 6 | Full clean test | 1.5 | Day 2 morning |
-| 7 | Bonus services (optional) | 3.0 | Day 2 afternoon |
-| 8 | Defense prep | 2.0 | Day 2 evening |
+re: fclean all
 
-**Total productive time: ~16.5h across 2 days**
+.PHONY: all clean fclean re
+```
+
+#### 5. Fix `run_docker.sh`
+- Move the `.env` existence check BEFORE the sed command
+- Add `-d` flag to `docker compose up` so it runs detached
+- Consider adding a final health check / status message
+
+#### 6. Populate `.dockerignore` files
+Each service's `.dockerignore` should contain:
+```
+.git
+*.md
+.dockerignore
+```
+
+### P2 — TESTING & VERIFICATION
+
+#### 7. Full clean test cycle
+- `make fclean` then `make re` — from absolute scratch
+- Verify WordPress loads, both users can log in
+- `make clean` then `make` — verify data persists
+- Check: `docker ps` shows 3 containers, all healthy
+- Check: `docker volume ls` shows named volumes
+- Check: `docker network ls` shows inception network
+
+#### 8. Requirements checklist walkthrough
+- [ ] `git ls-files srcs/.env` returns nothing
+- [ ] `git ls-files secrets/` returns nothing
+- [ ] No passwords anywhere in git history (consider `git log -p --all -S "password"`)
+- [ ] Containers restart on crash: `docker kill wordpress && sleep 5 && docker ps`
+- [ ] NGINX only entry: `docker port nginx` shows only 443
+- [ ] TLS version: `openssl s_client -connect slangero.42.fr:443 -tls1_2`
+- [ ] WordPress admin panel: `https://slangero.42.fr/wp-admin`
+- [ ] Two users exist with correct roles
+
+### P3 — BONUS (only if mandatory is perfect)
+
+#### 9. Bonus services (optional)
+- **Redis cache** — easiest, best value
+- **Adminer** — quick win
+- **Static website** — HTML/CSS/JS, no PHP
+- Each needs: own Dockerfile, own container, entry in docker-compose
+
+### P4 — DEFENSE PREP
+
+#### 10. Know your project inside out
+- Explain full request flow: Browser → NGINX (443/SSL) → PHP-FPM (9000) → WP → MariaDB (3306)
+- Know Docker commands: `exec`, `logs`, `inspect`, `volume ls`, `network inspect`
+- Be ready for live modifications during evaluation
+- Understand WHY each design choice was made (secrets vs env, bridge vs host, volumes vs bind)
