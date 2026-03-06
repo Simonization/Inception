@@ -2,22 +2,29 @@
 
 echo "Starting WordPress installation..."
 
+# Read passwords from Docker secrets
+if [ -f /run/secrets/db_password ]; then
+    SQL_PASSWORD=$(cat /run/secrets/db_password)
+fi
+if [ -f /run/secrets/credentials ]; then
+    source /run/secrets/credentials
+fi
+
+# Validate required variables
 if [ -z "$SQL_DATABASE" ] || [ -z "$SQL_USER" ] || \
    [ -z "$SQL_PASSWORD" ] || [ -z "$DOMAIN_NAME" ] || \
    [ -z "$WP_ADMIN_USER" ] || [ -z "$WP_ADMIN_PASSWORD" ] || \
    [ -z "$WP_ADMIN_EMAIL" ] || [ -z "$WP_USER" ] || \
    [ -z "$WP_USER_EMAIL" ] || [ -z "$WP_USER_PASSWORD" ]; then
-    echo "ERROR: Missing required environment variables."
+    echo "ERROR: Missing required environment variables or secrets."
     exit 1
 fi
 
 echo "Waiting for MariaDB..."
-sleep 5
-
 MAX_RETRIES=30
 COUNT=0
 while [ $COUNT -lt $MAX_RETRIES ]; do
-    if mysqladmin ping -h"mariadb" -u"$SQL_USER" -p"$SQL_PASSWORD" --silent; then
+    if mysqladmin ping -h"mariadb" -u"$SQL_USER" -p"$SQL_PASSWORD" --silent 2>/dev/null; then
         echo "MariaDB is ready!"
         break
     fi
@@ -45,14 +52,14 @@ if [ ! -f /var/www/html/wp-config.php ]; then
 
     echo "Installing WordPress..."
     wp core install --allow-root \
-        --url="${DOMAIN_NAME}" \
+        --url="https://${DOMAIN_NAME}" \
         --title="Inception42" \
         --admin_user="${WP_ADMIN_USER}" \
         --admin_password="${WP_ADMIN_PASSWORD}" \
         --admin_email="${WP_ADMIN_EMAIL}" \
         --path="/var/www/html/"
 
-    echo "Creating secondary user..."
+    echo "Creating secondary user ${WP_USER}..."
     wp user create "${WP_USER}" "${WP_USER_EMAIL}" \
         --user_pass="${WP_USER_PASSWORD}" \
         --role=author \
