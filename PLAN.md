@@ -1,126 +1,89 @@
-# Inception Project — Updated Plan
+# Inception Project — Updated Plan (March 6, 2026)
 
-## Progress Review (as of latest commits)
+## Status: MANDATORY PART COMPLETE — Ready for evaluation
 
-### DONE
-- [x] Step 2: Docker secrets wired into docker-compose.yml + entrypoint scripts
-- [x] Step 5: Documentation written (README.md, USER_DOC.md, DEV_DOC.md)
+---
+
+## COMPLETED
+
+### P0 — Critical (all fixed)
+- [x] `.env` untracked from git (`git ls-files srcs/.env` returns nothing)
+- [x] `secrets/` directory created with password files (not committed)
+- [x] Docker secrets wired into docker-compose.yml + entrypoint scripts
+- [x] First build test passed — all 3 containers running, WordPress loads
+
+### P1 — Pre-evaluation fixes (all done)
+- [x] Makefile `fclean` removes images + system prune
+- [x] `run_docker.sh` — `.env` check before sed, `-d` flag for detached mode
+- [x] `.dockerignore` files populated (`.git`, `*.md`, `.dockerignore`)
+- [x] WordPress setup race condition fixed (`--skip-check` + `wp db check` retry loop)
+
+### P2 — Testing & verification (all passed)
+- [x] **Data persistence**: comment survived `docker compose down && up`
+- [x] **Auto-restart**: `docker exec wordpress kill 1` → container restarts automatically (confirmed by uptime reset)
+- [x] **Ports**: `docker port nginx` shows only `443/tcp` (IPv4 + IPv6)
+- [x] **TLS 1.2**: `openssl s_client -tls1_2` → Protocol: TLSv1.2, Cipher: ECDHE-RSA-AES256-GCM-SHA384
+- [x] **TLS 1.3**: `openssl s_client -tls1_3` → Protocol: TLSv1.3, Cipher: TLS_AES_256_GCM_SHA384
+- [x] **Git tracking**: `git ls-files srcs/.env` and `git ls-files secrets/` return nothing
+- [x] **WordPress admin**: both users can log in at `https://slangero.42.fr/wp-admin`
+- [x] **Volumes**: `docker volume ls` shows `srcs_mariadb_data` and `srcs_wordpress_data`
+- [x] **Network**: `docker network ls` shows `srcs_inception` with bridge driver
+- [x] **3 containers**: mariadb, wordpress, nginx all running
+
+### Architecture (already correct)
 - [x] Entrypoint scripts use `exec` for PID 1
 - [x] Bounded retry loops (no `while true`)
 - [x] `restart: unless-stopped` on all containers
 - [x] No `network: host`, `--link`, `links:` in docker-compose
 - [x] No `latest` tag in Dockerfiles
 - [x] No passwords in Dockerfiles
-- [x] Named volumes with host-path mapping
-- [x] NGINX sole entry point on port 443, TLSv1.2/TLSv1.3
-- [x] Admin username `superuser` (no "admin"), two WP users configured
+- [x] Named volumes with host-path binding
+- [x] NGINX sole entry point on port 443
+- [x] Admin username `superuser` (no "admin"), two WP users with different roles
 - [x] README has italic first line, all required sections + 4 comparisons + AI usage
-
-### CRITICAL ISSUES REMAINING
-
-1. **`srcs/.env` is tracked in git** — Commit 03a2934 added it. `.gitignore` lists it but the file was committed before/force-added. Must `git rm --cached srcs/.env` to untrack. Evaluators WILL check `git ls-files` and this alone can fail the project.
-
-2. **`secrets/` directory does not exist** — No folder, no files. Docker-compose WILL fail at startup because it references `../secrets/db_password.txt`, `../secrets/db_root_password.txt`, `../secrets/credentials.txt`. This is 100% blocking.
-
-3. **`.dockerignore` files are all empty** — Should exclude `.git`, `*.md`, `tools/`, etc. from build context. Minor but shows lack of polish.
-
-4. **`Makefile` `fclean` just aliases `clean`** — Should also remove Docker images (`docker rmi`) for a true full clean. Evaluators may test `make fclean && make re`.
-
-5. **`run_docker.sh` sed runs before .env existence check** — Line 16 does `sed -i` on `.env`, line 18 checks if it exists. Swap order or guard the sed.
-
-6. **`run_docker.sh` runs `docker compose up` in foreground** — No `-d` flag. Terminal stays locked. Evaluators expect to get their prompt back.
 
 ---
 
-## PRIORITY LIST — What To Do Next
+## EVALUATION CHEAT SHEET
 
-### P0 — DO THESE FIRST (project-failing if missed)
-
-#### 1. Untrack `.env` from git
+### Quick demo commands
 ```bash
-git rm --cached srcs/.env
-git commit -m "Remove .env from git tracking (security requirement)"
-```
-Verify: `git ls-files srcs/.env` should return nothing.
+# Show containers
+docker ps
 
-#### 2. Create secrets directory and files
-```bash
-mkdir -p secrets
-echo "CHANGE_ME" > secrets/db_password.txt
-echo "CHANGE_ME" > secrets/db_root_password.txt
-printf "WP_ADMIN_PASSWORD=CHANGE_ME\nWP_USER_PASSWORD=CHANGE_ME\n" > secrets/credentials.txt
-```
-These must exist locally but NOT be committed (already gitignored).
+# Show volumes and network
+docker volume ls
+docker network ls
 
-#### 3. First build test
-- Ensure `/etc/hosts` has `127.0.0.1 slangero.42.fr`
-- Run `make re`
-- Debug until all 3 containers are running
-- Verify `https://slangero.42.fr` loads WordPress
+# Show only port 443 exposed
+docker port nginx
 
-### P1 — FIX BEFORE EVALUATION
+# TLS verification
+echo | openssl s_client -connect slangero.42.fr:443 -tls1_2 2>&1 | grep "Protocol\|Cipher"
+echo | openssl s_client -connect slangero.42.fr:443 -tls1_3 2>&1 | grep "Protocol\|Cipher"
 
-#### 4. Fix Makefile targets
-```makefile
-all:
-	@bash run_docker.sh
+# Auto-restart proof
+docker exec wordpress kill 1 && sleep 15 && docker ps
 
-clean:
-	@bash run_docker.sh --clean
-
-fclean: clean
-	@docker rmi -f $$(docker images -qa) 2>/dev/null || true
-
-re: fclean all
-
-.PHONY: all clean fclean re
+# Git security check
+git ls-files srcs/.env
+git ls-files secrets/
 ```
 
-#### 5. Fix `run_docker.sh`
-- Move the `.env` existence check BEFORE the sed command
-- Add `-d` flag to `docker compose up` so it runs detached
-- Consider adding a final health check / status message
+### Key explanations for corrector
+- **Request flow**: Browser → NGINX (443/TLS) → PHP-FPM (9000/TCP) → WordPress → MariaDB (3306)
+- **Why two users?** Principle of least privilege — superuser (admin) manages the site, slangero (author) writes content only
+- **Why `docker exec kill 1` not `docker kill`?** Simulates a real process crash; `docker kill` sends SIGKILL to container runtime which can bypass restart handler in some Docker versions
+- **Why Docker secrets?** Passwords mounted as files at runtime (`/run/secrets/`), never baked into images or environment variables
+- **Why bridge network?** Containers communicate by service name (DNS), isolated from host network
+- **Why named volumes with bind mount?** Data persists across container rebuilds, stored at a known host path
 
-#### 6. Populate `.dockerignore` files
-Each service's `.dockerignore` should contain:
-```
-.git
-*.md
-.dockerignore
-```
+---
 
-### P2 — TESTING & VERIFICATION
+## P3 — BONUS (only if mandatory is perfect)
 
-#### 7. Full clean test cycle
-- `make fclean` then `make re` — from absolute scratch
-- Verify WordPress loads, both users can log in
-- `make clean` then `make` — verify data persists
-- Check: `docker ps` shows 3 containers, all healthy
-- Check: `docker volume ls` shows named volumes
-- Check: `docker network ls` shows inception network
-
-#### 8. Requirements checklist walkthrough
-- [ ] `git ls-files srcs/.env` returns nothing
-- [ ] `git ls-files secrets/` returns nothing
-- [ ] No passwords anywhere in git history (consider `git log -p --all -S "password"`)
-- [ ] Containers restart on crash: `docker kill wordpress && sleep 5 && docker ps`
-- [ ] NGINX only entry: `docker port nginx` shows only 443
-- [ ] TLS version: `openssl s_client -connect slangero.42.fr:443 -tls1_2`
-- [ ] WordPress admin panel: `https://slangero.42.fr/wp-admin`
-- [ ] Two users exist with correct roles
-
-### P3 — BONUS (only if mandatory is perfect)
-
-#### 9. Bonus services (optional)
+#### Bonus services (optional)
 - **Redis cache** — easiest, best value
 - **Adminer** — quick win
 - **Static website** — HTML/CSS/JS, no PHP
 - Each needs: own Dockerfile, own container, entry in docker-compose
-
-### P4 — DEFENSE PREP
-
-#### 10. Know your project inside out
-- Explain full request flow: Browser → NGINX (443/SSL) → PHP-FPM (9000) → WP → MariaDB (3306)
-- Know Docker commands: `exec`, `logs`, `inspect`, `volume ls`, `network inspect`
-- Be ready for live modifications during evaluation
-- Understand WHY each design choice was made (secrets vs env, bridge vs host, volumes vs bind)
