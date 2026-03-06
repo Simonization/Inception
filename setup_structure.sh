@@ -1,18 +1,47 @@
 #!/bin/bash
-mkdir -p srcs/requirements/nginx/{conf,tools}
-mkdir -p srcs/requirements/mariadb/{conf,tools}
-mkdir -p srcs/requirements/wordpress/{conf,tools}
+# Setup script for Inception project
+# Run this on a fresh clone to generate .env and secrets
+
+USER_LOGIN="${USER}"
+
+# Generate srcs/.env if missing
+if [ ! -f srcs/.env ]; then
+    cat > srcs/.env << EOF
+DOMAIN_NAME=${USER_LOGIN}.42.fr
+SQL_DATA_PATH=/home/${USER_LOGIN}/data/mariadb
+WP_DATA_PATH=/home/${USER_LOGIN}/data/wordpress
+MYSQL_DATABASE=wordpress
+MYSQL_USER=wpuser
+WP_TITLE=Inception
+WP_ADMIN_USER=superuser
+WP_ADMIN_EMAIL=superuser@${USER_LOGIN}.42.fr
+WP_USER=${USER_LOGIN}
+WP_USER_EMAIL=${USER_LOGIN}@${USER_LOGIN}.42.fr
+EOF
+    echo "Created srcs/.env"
+else
+    echo "srcs/.env already exists, skipping"
+fi
+
+# Generate secrets if missing
 mkdir -p secrets
-touch Makefile srcs/docker-compose.yml srcs/.env srcs/.env.example README.md USER_DOC.md DEV_DOC.md run_docker.sh
-touch srcs/requirements/nginx/Dockerfile srcs/requirements/nginx/.dockerignore
-touch srcs/requirements/nginx/conf/nginx.conf srcs/requirements/nginx/tools/setup_ssl.sh
-touch srcs/requirements/mariadb/Dockerfile srcs/requirements/mariadb/.dockerignore
-touch srcs/requirements/mariadb/conf/50-server.cnf srcs/requirements/mariadb/tools/setup_mariadb.sh
-touch srcs/requirements/wordpress/Dockerfile srcs/requirements/wordpress/.dockerignore
-touch srcs/requirements/wordpress/conf/www.conf srcs/requirements/wordpress/tools/setup_wordpress.sh
-touch secrets/credentials.txt secrets/db_password.txt secrets/db_root_password.txt
-echo -e "srcs/.env\nsecrets/" > .gitignore
-echo "✅ Done!"
+if [ ! -s secrets/db_password.txt ]; then
+    echo "dbpass42" > secrets/db_password.txt
+    echo "Created secrets/db_password.txt"
+fi
+if [ ! -s secrets/db_root_password.txt ]; then
+    echo "rootpass42" > secrets/db_root_password.txt
+    echo "Created secrets/db_root_password.txt"
+fi
+if [ ! -s secrets/credentials.txt ]; then
+    cat > secrets/credentials.txt << EOF
+WP_ADMIN_PASSWORD=adminpass42
+WP_USER_PASSWORD=userpass42
+EOF
+    echo "Created secrets/credentials.txt"
+fi
+
+echo "Setup complete! You can now run: make re"
 
 
 
