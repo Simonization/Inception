@@ -40,7 +40,7 @@ fi
 
 if [ ! -f /var/www/html/wp-config.php ]; then
     echo "Downloading WordPress..."
-    wp core download --version=6.0 --locale=en_US --allow-root
+    wp core download --version=6.0 --locale=en_US --allow-root --force
 
     echo "Creating wp-config.php..."
     wp config create --allow-root \
@@ -48,7 +48,22 @@ if [ ! -f /var/www/html/wp-config.php ]; then
         --dbuser="${SQL_USER}" \
         --dbpass="${SQL_PASSWORD}" \
         --dbhost="mariadb:3306" \
+        --skip-check \
         --path="/var/www/html/"
+
+    # Wait for MariaDB to be fully ready (not just the temporary setup instance)
+    echo "Verifying database connection..."
+    DB_RETRIES=30
+    DB_COUNT=0
+    while [ $DB_COUNT -lt $DB_RETRIES ]; do
+        if wp db check --allow-root --path="/var/www/html/" 2>/dev/null; then
+            echo "Database connection verified!"
+            break
+        fi
+        echo "Database not ready yet... attempt $((DB_COUNT + 1))/$DB_RETRIES"
+        sleep 2
+        DB_COUNT=$((DB_COUNT + 1))
+    done
 
     echo "Installing WordPress..."
     wp core install --allow-root \
