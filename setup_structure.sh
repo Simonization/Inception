@@ -10,8 +10,8 @@ if [ ! -f srcs/.env ]; then
 DOMAIN_NAME=${USER_LOGIN}.42.fr
 SQL_DATA_PATH=/home/${USER_LOGIN}/data/mariadb
 WP_DATA_PATH=/home/${USER_LOGIN}/data/wordpress
-MYSQL_DATABASE=wordpress
-MYSQL_USER=wpuser
+SQL_DATABASE=wordpress
+SQL_USER=wpuser
 WP_TITLE=Inception
 WP_ADMIN_USER=superuser
 WP_ADMIN_EMAIL=superuser@${USER_LOGIN}.42.fr
