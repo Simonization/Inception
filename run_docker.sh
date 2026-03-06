@@ -13,12 +13,12 @@ if [[ "$1" == "--blank-start" ]]; then
     BLANK_START=true
 fi
 
-sed -i "s|/home/[^/]*/data/|/home/$USER/data/|g" srcs/.env
-
 if [ ! -f srcs/.env ]; then
     echo "ERROR: srcs/.env file not found."
     exit 1
 fi
+
+sed -i "s|/home/[^/]*/data/|/home/$USER/data/|g" srcs/.env
 
 source srcs/.env
 
@@ -55,7 +55,11 @@ mkdir -p "${WP_DATA_PATH}"
 if $BLANK_START; then
     echo "Building images from scratch..."
     docker compose -f srcs/docker-compose.yml build --no-cache
-    docker compose -f srcs/docker-compose.yml up
+    docker compose -f srcs/docker-compose.yml up -d
 else
-    docker compose -f srcs/docker-compose.yml up --build
+    docker compose -f srcs/docker-compose.yml up -d --build
 fi
+
+echo "Waiting for containers to start..."
+sleep 3
+docker compose -f srcs/docker-compose.yml ps
