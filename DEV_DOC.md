@@ -206,9 +206,8 @@ Inception/
 
 ---
 
-## Evaluation / Correction Guide
+## Subject Requirements Guide
 
-This section prepares you for the 42 Inception correction. It follows the actual correction sheet, organized by topic.
 
 ### PART 1 — Docker Concepts (docker-compose.yml)
 
@@ -350,7 +349,6 @@ SHOW TABLES;
 
 ### PART 6 — Making Changes (Ports, Config)
 
-The corrector asks you to change something and prove it still works. Have **3 examples** ready:
 
 **Example 1 — Change nginx external port (443 to 8443):**
 
@@ -381,7 +379,6 @@ Then `make re` and verify: `docker exec -it mariadb mysql -u root -p -e "SHOW VA
 
 ### PART 7 — Source Code Review
 
-The corrector can ask to see these things in the source code:
 
 **"Each Docker image has the same name as its service"**
 
@@ -452,11 +449,8 @@ Shows all three containers connected to the `inception` bridge network.
 
 ### PART 8 — Architecture Question
 
-**"Ton WordPress ne vient pas d'internet mais de ton reverse proxy?"**
-
-Translation: Your WordPress content does not come from the internet directly, it comes through your reverse proxy?
-
-**Answer:** Yes. The request flow is:
+WordPress content does not come from the internet directly, it comes through your reverse proxy. 
+The request flow is:
 
 ```
 Browser --HTTPS:443--> nginx (reverse proxy)
@@ -484,7 +478,7 @@ grep fastcgi_pass srcs/requirements/nginx/conf/nginx.conf
 # Output: fastcgi_pass wordpress:9000;
 ```
 
-**"Did you build the services separately or sequentially?"**
+**"Are services nuilt separately or sequentially?"**
 
 The services were designed with a dependency chain:
 
@@ -530,3 +524,4 @@ docker logs nginx
 docker logs wordpress
 docker logs mariadb
 ```
+
