@@ -208,339 +208,41 @@ Inception/
             └── tools/setup_wordpress.sh # Downloads WP, configures, starts PHP-FPM
 ```
 
----
+## Customization Examples
 
-## Subject Requirements Guide
+### Example 1 — Change the HTTPS port (443 → 8443)
 
+Changing the external port requires edits in **3 files** plus a full data wipe, because WordPress stores the site URL in its database and will redirect to the old port otherwise.
 
-### PART 1 — Docker Concepts (docker-compose.yml)
-
-#### Dockerfiles vs Volumes vs Networks
-
-**Dockerfiles — "The Blueprint"**
-
+**1. `srcs/docker-compose.yml`** — change the port mapping:
 ```yaml
-build:
-  context: ./requirements/mariadb
-  dockerfile: Dockerfile
+ports:
+  - "8443:8443"    # was "443:443"
 ```
 
-A Dockerfile is a recipe: what base OS, what packages to install, what files to copy, what command to run. Think of it as an **apartment blueprint** — the Dockerfile describes how to build the apartment (image). Running that image gives you a **container** (the actual apartment).
-
-**Volumes — "Persistent Storage"**
-
-```yaml
-volumes:
-  - mariadb_data:/var/lib/mysql
-```
-
-Containers are ephemeral — when they stop, everything inside is lost. Volumes mount a path from the host machine into the container. So data survives container restarts and rebuilds. Think of it as a **USB drive** plugged into the container.
-
-Note: both `nginx` and `wordpress` share the same `wordpress_data` volume — that is how nginx can serve PHP files that WordPress wrote.
-
-**Networks — "Private LAN"**
-
-```yaml
-networks:
-  inception:
-    driver: bridge
-```
-
-All three services are on the `inception` network. They can talk to each other by container name (e.g., WordPress connects to `mariadb` as a hostname). Only nginx exposes port 443 to the outside. MariaDB and WordPress are invisible externally. Think of it as an **office building** — nginx is the public reception, the rest are internal offices.
-
-#### Why `version: "3.8"`?
-
-The `version` field tells Docker Compose which file format to use. Version 3.8 supports the `secrets` syntax used in this project. Modern Docker Compose v2 (the `docker compose` command without hyphen) actually ignores this field, but keeping it explicit is good practice.
-
-You **can** change it:
-- `3.9` or higher — works fine, backwards-compatible
-- `3.0` to `3.4` — breaks, because `secrets:` at service level was not supported
-- `2.x` — breaks, completely different secrets syntax
-- Remove the line entirely — modern Docker Compose v2 handles it, older versions will error
-
----
-
-### PART 2 — Live WordPress Demo
-
-**Goal:** Show a working WordPress site with login, comments, and public visibility.
-
-1. Open browser: `https://slangero.42.fr`
-2. Accept the SSL warning (self-signed cert, generated at container startup by `setup_ssl.sh`)
-3. Go to `https://slangero.42.fr/wp-login.php`, login as admin
-4. Open any post, add a comment, publish it
-5. Log out, revisit the post — the comment is visible without login
-
----
-
-### PART 3 — WordPress Container Checks
-
-**"Check there is a Dockerfile"**
-
-```bash
-cat srcs/requirements/wordpress/Dockerfile
-```
-
-Point out: base image is `debian:bullseye`, installs `php7.4-fpm` only — **no nginx in this container**.
-
-**"Check there is a volume"**
-
-```bash
-docker inspect wordpress | grep -A 10 Mounts
-```
-
-Shows `wordpress_data` is mounted at `/var/www/html`.
-
-**"Check with docker ps / ls"**
-
-```bash
-docker ps
-docker volume ls
-```
-
----
-
-### PART 4 — MariaDB Container Checks
-
-**"Check the Dockerfile"**
-
-```bash
-cat srcs/requirements/mariadb/Dockerfile
-```
-
-Point out: `debian:bullseye`, installs `mariadb-server` only — no nginx.
-
-**"Check there is no nginx in the file"**
-
-The corrector means no nginx installed in the MariaDB container:
-
-```bash
-docker exec mariadb which nginx   # should fail — nginx not installed
-```
-
-**"How to connect to the DB" — key commands:**
-
-```bash
-# Connect as the WordPress database user
-docker exec -it mariadb mysql -u wpuser -p wordpress
-
-# Or connect as root
-docker exec -it mariadb mysql -u root -p
-```
-
-Then show the database exists:
-
-```sql
-SHOW DATABASES;
-USE wordpress;
-SHOW TABLES;
-```
-
----
-
-### PART 5 — Persistence (VM Reboot)
-
-**Steps:**
-
-1. While containers are running, add content in WordPress (a post or comment)
-2. Shut down the VM completely
-3. Reopen the VM
-4. `cd ~/Inception && make`
-5. Open the site — all content is still there
-
-**Why it works:** Data lives on the host disk at `~/data/mysql` and `~/data/wordpress` (configured in `.env`). Containers are ephemeral, but the volumes point to the host filesystem.
-
----
-
-### PART 6 — Making Changes (Ports, Config)
-
-
-**Example 1 — Change nginx port (443 to 8443):**
-
-1. In `srcs/docker-compose.yml`, change the port mapping:
-   ```yaml
-   ports:
-     - "8443:8443"    # was "443:443"
-
-In srcs/requirements/nginx/conf/nginx.conf, change the listen directive:
-
+**2. `srcs/requirements/nginx/conf/nginx.conf`** — change the listen directive:
+```nginx
 listen 8443 ssl http2;    # was "listen 443 ssl http2;"
-
-Rebuild and restart:
-
-make re
-
-    Clear browser cache (Ctrl+Shift+Delete → Cookies + Cache → Clear)
-
-    Visit https://login.42.fr:8443
-
-    Note: Both the container port and the NGINX listen port must match. If you only change the docker-compose mapping without updating nginx.conf, redirects will fail.
-
-
-**Example 2 — Change PHP-FPM max children:**
-
-In `srcs/requirements/wordpress/conf/www.conf`:
-```ini
-pm.max_children = 10   ; was 5
 ```
-Then `make re` and verify: `docker exec wordpress cat /etc/php/7.4/fpm/pool.d/www.conf | grep max_children`
 
-**Example 3 — Change MariaDB character set:**
-
-In `srcs/requirements/mariadb/conf/50-server.cnf`:
-```ini
-character-set-server = utf8   ; was utf8mb4
-```
-Then `make re` and verify: `docker exec -it mariadb mysql -u root -p -e "SHOW VARIABLES LIKE 'character_set_server';"`
-
----
-
-### PART 7 — Source Code Review
-
-
-**"Each Docker image has the same name as its service"**
-
+**3. `srcs/requirements/wordpress/tools/setup_wordpress.sh`** — include the port in the WordPress install URL:
 ```bash
-docker ps --format "table {{.Names}}\t{{.Image}}"
+wp core install --allow-root \
+    --url="https://${DOMAIN_NAME}:8443" \    # was "https://${DOMAIN_NAME}"
 ```
 
-In `docker-compose.yml`, each service (`mariadb`, `wordpress`, `nginx`) has `container_name:` matching the service name.
-
-**"Images are built yourself, not pulled from DockerHub"**
-
+**4. Wipe data and rebuild** (a simple `make re` is not enough — the old URL persists in the MariaDB database):
 ```bash
-grep -r "^FROM" srcs/requirements/*/Dockerfile
+make clean
+make
 ```
 
-Output: `FROM debian:bullseye` for all three. All services use `build:` in docker-compose.yml, not `image:`. Alpine/Debian base images are allowed per the subject.
+**5. Clear browser cache** (`Ctrl+Shift+Delete` → Cookies + Cache → Clear), then visit `https://slangero.42.fr:8443`.
 
-**"Penultimate stable version of Alpine or Debian"**
-
-`debian:bullseye` is Debian 11. At the time this project was created, Debian 12 (bookworm) was the latest stable release, making bullseye the penultimate stable version.
-
-**"Dockerfiles called by docker-compose.yml by your Makefile"**
-
-The chain is: `Makefile` -> `run_docker.sh` -> `docker compose -f srcs/docker-compose.yml up --build` -> each service's `Dockerfile`.
-
-**"TLSv1.2 or TLSv1.3 only"**
-
-```bash
-grep ssl_protocols srcs/requirements/nginx/conf/nginx.conf
-```
-
-Output: `ssl_protocols TLSv1.2 TLSv1.3;`
-
-**"WordPress + php-fpm without nginx"**
-
-The WordPress Dockerfile only installs `php7.4-fpm`. PHP-FPM listens on port 9000 (internal). No nginx binary exists in this container:
-```bash
-docker exec wordpress which nginx   # fails
-```
-
-**"MariaDB without nginx"**
-
-Same check:
-```bash
-docker exec mariadb which nginx   # fails
-```
-
-**"Docker named volumes"**
-
-```bash
-docker volume ls
-docker volume inspect srcs_mariadb_data
-docker volume inspect srcs_wordpress_data
-```
-
-Both volumes store data at `/home/slangero/data/` on the host machine.
-
-**"Docker network"**
-
-```bash
-docker network ls
-docker network inspect srcs_inception
-```
-
-Shows all three containers connected to the `inception` bridge network.
-
----
-
-### PART 8 — Architecture Question
-
-WordPress content does not come from the internet directly, it comes through your reverse proxy. 
-The request flow is:
-
-```
-Browser --HTTPS:443--> nginx (reverse proxy)
-                          |
-                    FastCGI:9000
-                          |
-                          v
-                      wordpress (php-fpm)
-                          |
-                     MySQL:3306
-                          |
-                          v
-                       mariadb
-```
-
-- **nginx** is the only public entry point (only port exposed: 443)
-- nginx receives the HTTPS request and proxies it internally to WordPress on port 9000 via FastCGI
-- WordPress processes PHP and talks to MariaDB on port 3306
-- Nothing reaches WordPress or MariaDB directly from the internet
-
-Show in code:
-
-```bash
-grep fastcgi_pass srcs/requirements/nginx/conf/nginx.conf
-# Output: fastcgi_pass wordpress:9000;
-```
-
-**"Are services nuilt separately or sequentially?"**
-
-The services were designed with a dependency chain:
-
-1. **MariaDB first** — standalone database, no dependencies
-2. **WordPress second** — `depends_on: mariadb` — built knowing MariaDB exists, connects to it on startup
-3. **nginx third** — `depends_on: wordpress` — built knowing WordPress serves PHP on port 9000
-
-This is visible in `docker-compose.yml` via the `depends_on` directives, and in the startup scripts (`setup_wordpress.sh` waits for MariaDB to be ready before proceeding).
-
----
-
-### Quick Reference — Commands to Have Ready
-
-```bash
-# Show all running containers
-docker ps
-
-# Show volumes and networks
-docker volume ls
-docker network ls
-
-# Connect to MariaDB
-docker exec -it mariadb mysql -u wpuser -p wordpress
-
-# Check nginx TLS config
-docker exec nginx nginx -T | grep ssl_protocols
-
-# Verify no nginx in other containers
-docker exec wordpress which nginx   # fails
-docker exec mariadb which nginx     # fails
-
-# Check Dockerfile base images
-grep -r "^FROM" srcs/requirements/*/Dockerfile
-
-# Inspect network
-docker network inspect srcs_inception
-
-# Full rebuild
-cd ~/Inception && make re
-
-# Container logs (useful for debugging)
-docker logs nginx
-docker logs wordpress
-docker logs mariadb
-```
-
-
-
+> **Why all 3 files?** The docker-compose port mapping exposes the port on the host. The nginx `listen` directive must match the container-side port. And WordPress stores `siteurl` and `home` in its `wp_options` database table at install time — if these don't include the port, WordPress will redirect every request to the portless URL, which no longer has anything listening.
+>
+> **Alternative without data wipe:** If you want to keep existing content, update the database directly instead of step 3+4:
+> ```bash
+> docker exec wordpress wp option update siteurl 'https://slangero.42.fr:8443' --allow-root
+> docker exec wordpress wp option update home 'https://slangero.42.fr:8443' --allow-root
+> ```
