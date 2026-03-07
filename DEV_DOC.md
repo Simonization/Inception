@@ -142,8 +142,12 @@ docker network ls
 docker network inspect srcs_inception
 
 # Verify container connectivity
-docker exec wordpress ping -c 2 mariadb
-docker exec nginx ping -c 2 wordpress
+# WordPress can reach MariaDB (mysql client is installed for WP)
+docker exec wordpress wp db check --path=/var/www/html
+
+# NGINX can reach WordPress (it proxies PHP-FPM on port 9000)
+# The fact that the website works IS the proof
+
 ```
 
 ## Data Storage and Persistence
@@ -524,4 +528,5 @@ docker logs nginx
 docker logs wordpress
 docker logs mariadb
 ```
+
 
