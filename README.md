@@ -34,7 +34,7 @@ All containers communicate through an isolated Docker bridge network called `inc
 
 ```bash
 # Clone the repository
-git clone <repo-url> && cd inceptionz
+git clone <repo-url> && cd Inception
 
 # Ensure /etc/hosts has the domain entry
 # (may require admin privileges)
@@ -57,8 +57,9 @@ make re
 | Command | Action |
 |---------|--------|
 | `make` | Start with existing data (rebuild if changed) |
-| `make re` | Clean everything and rebuild from scratch |
 | `make clean` | Stop all services and remove volumes/data |
+| `make fclean` | `make clean` + remove all Docker images |
+| `make re` | Full wipe (fclean) + rebuild from scratch |
 
 ## Project Description
 

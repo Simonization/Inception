@@ -34,6 +34,14 @@ make clean
 
 This stops all containers and removes volumes and data. The project will not be running after this command.
 
+### Remove all Docker images
+
+```bash
+make fclean
+```
+
+This runs `make clean` and additionally removes all Docker images built by the project. Useful when you want to force a full image rebuild on the next `make`.
+
 ## Accessing the Website
 
 Once the stack is running, open your browser and navigate to:
