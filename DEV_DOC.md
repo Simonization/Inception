@@ -356,39 +356,35 @@ SHOW TABLES;
 
 **Example 1 — Change HTTPS port (443 → 8443):**
 
-Changing the port requires edits in **3 files** plus a full data wipe, because WordPress stores the site URL (including the port) in its database and will redirect browsers to the old URL otherwise.
+Changing the external port requires edits in **2 files** plus a full data wipe, because WordPress stores the site URL (including the port) in its database and will redirect browsers to the old URL otherwise.
 
-**Step 1.** In `srcs/docker-compose.yml`, change the port mapping:
+**Step 1.** In `srcs/docker-compose.yml`, change the host-side port mapping:
 ```yaml
 ports:
-  - "8443:8443"    # was "443:443"
+  - "8443:443"    # was "443:443"
 ```
-The format is `HOST_PORT:CONTAINER_PORT`. The left side is the port your browser connects to on the host. The right side is the port Docker forwards to inside the container. Both must match what NGINX listens on.
+The format is `HOST_PORT:CONTAINER_PORT`. The left side (`8443`) is the port your browser connects to on the host. The right side (`443`) stays the same — NGINX inside the container still listens on 443, and Docker handles the translation. No need to touch `nginx.conf`.
 
-**Step 2.** In `srcs/requirements/nginx/conf/nginx.conf`, change the listen directive:
-```nginx
-listen 8443 ssl http2;    # was "listen 443 ssl http2;"
-```
-This tells NGINX which port to bind inside the container. It must match the right side of the docker-compose port mapping.
-
-**Step 3.** In `srcs/requirements/wordpress/tools/setup_wordpress.sh`, add the port to the install URL:
+**Step 2.** In `srcs/requirements/wordpress/tools/setup_wordpress.sh`, add the port to the install URL:
 ```bash
 --url="https://${DOMAIN_NAME}:8443"    # was "https://${DOMAIN_NAME}"
 ```
 WordPress saves this URL in its `wp_options` database table (`siteurl` and `home` rows). If the port is missing, WordPress will redirect every request to `https://slangero.42.fr` (without `:8443`), which has nothing listening — causing a connection error or redirect loop.
 
-**Step 4.** Wipe data and rebuild from scratch:
+**Step 3.** Wipe data and rebuild from scratch:
 ```bash
 make clean    # removes volumes + data directories (old DB with old URL is deleted)
 make          # recreates everything, setup_wordpress.sh runs with the new URL
 ```
 A simple `make re` is **not enough** — it rebuilds images but the database volume may survive with the old URL baked in.
 
-**Step 5.** Clear your browser cache (`Ctrl+Shift+Delete` → Cookies + Cache → Clear), then visit `https://slangero.42.fr:8443`.
+**Step 4.** Clear your browser cache (`Ctrl+Shift+Delete` → Cookies + Cache → Clear), then visit `https://slangero.42.fr:8443`.
 
-> **Why all 3 files?** If you only change docker-compose, NGINX still listens on 443 inside the container while Docker forwards to 8443 — connection refused. If you skip the WordPress URL, WordPress redirects browsers to the portless URL. All three must agree.
+> **Why does `nginx.conf` stay unchanged?** Docker's port mapping handles the translation: the browser connects to host port 8443, Docker forwards it to container port 443, and NGINX (listening on 443) receives it normally. Only the host-side port changes.
 >
-> **Alternative without data wipe:** If you want to keep existing content, skip step 3 and instead update the database directly after step 4:
+> **Why is the data wipe mandatory?** WordPress stores `siteurl` and `home` in its database at install time. If these don't include `:8443`, WordPress will redirect every browser request to the portless URL. Wiping the data lets `setup_wordpress.sh` reinstall with the correct URL.
+>
+> **Alternative without data wipe:** If you want to keep existing content, skip step 2 and instead update the database directly after the containers are running:
 > ```bash
 > docker exec wordpress wp option update siteurl 'https://slangero.42.fr:8443' --allow-root --path=/var/www/html
 > docker exec wordpress wp option update home 'https://slangero.42.fr:8443' --allow-root --path=/var/www/html
