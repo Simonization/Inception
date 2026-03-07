@@ -354,14 +354,27 @@ SHOW TABLES;
 ### PART 6 — Making Changes (Ports, Config)
 
 
-**Example 1 — Change nginx external port (443 to 8443):**
+**Example 1 — Change nginx port (443 to 8443):**
 
-In `srcs/docker-compose.yml`:
-```yaml
-ports:
-  - "8443:443"    # was "443:443"
-```
-Then `make re` and visit `https://slangero.42.fr:8443`.
+1. In `srcs/docker-compose.yml`, change the port mapping:
+   ```yaml
+   ports:
+     - "8443:8443"    # was "443:443"
+
+In srcs/requirements/nginx/conf/nginx.conf, change the listen directive:
+
+listen 8443 ssl http2;    # was "listen 443 ssl http2;"
+
+Rebuild and restart:
+
+make re
+
+    Clear browser cache (Ctrl+Shift+Delete → Cookies + Cache → Clear)
+
+    Visit https://login.42.fr:8443
+
+    Note: Both the container port and the NGINX listen port must match. If you only change the docker-compose mapping without updating nginx.conf, redirects will fail.
+
 
 **Example 2 — Change PHP-FPM max children:**
 
@@ -528,5 +541,6 @@ docker logs nginx
 docker logs wordpress
 docker logs mariadb
 ```
+
 
 
