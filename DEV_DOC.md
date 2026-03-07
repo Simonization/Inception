@@ -203,3 +203,42 @@ inceptionz/
             ├── conf/www.conf          # PHP-FPM pool config
             └── tools/setup_wordpress.sh # Downloads WP, configures, starts PHP-FPM
 ```
+
+## Customization Examples
+
+### Example 1 — Change the HTTPS port (443 → 8443)
+
+Changing the external port requires edits in **3 files** plus a full data wipe, because WordPress stores the site URL in its database and will redirect to the old port otherwise.
+
+**1. `srcs/docker-compose.yml`** — change the port mapping:
+```yaml
+ports:
+  - "8443:8443"    # was "443:443"
+```
+
+**2. `srcs/requirements/nginx/conf/nginx.conf`** — change the listen directive:
+```nginx
+listen 8443 ssl http2;    # was "listen 443 ssl http2;"
+```
+
+**3. `srcs/requirements/wordpress/tools/setup_wordpress.sh`** — include the port in the WordPress install URL:
+```bash
+wp core install --allow-root \
+    --url="https://${DOMAIN_NAME}:8443" \    # was "https://${DOMAIN_NAME}"
+```
+
+**4. Wipe data and rebuild** (a simple `make re` is not enough — the old URL persists in the MariaDB database):
+```bash
+make clean
+make
+```
+
+**5. Clear browser cache** (`Ctrl+Shift+Delete` → Cookies + Cache → Clear), then visit `https://slangero.42.fr:8443`.
+
+> **Why all 3 files?** The docker-compose port mapping exposes the port on the host. The nginx `listen` directive must match the container-side port. And WordPress stores `siteurl` and `home` in its `wp_options` database table at install time — if these don't include the port, WordPress will redirect every request to the portless URL, which no longer has anything listening.
+>
+> **Alternative without data wipe:** If you want to keep existing content, update the database directly instead of step 3+4:
+> ```bash
+> docker exec wordpress wp option update siteurl 'https://slangero.42.fr:8443' --allow-root
+> docker exec wordpress wp option update home 'https://slangero.42.fr:8443' --allow-root
+> ```
